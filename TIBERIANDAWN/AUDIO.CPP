@@ -256,6 +256,9 @@ struct SoundEffectNameStruct {
 	{"DINODIE1", 	10,	IN_NOVAR},	//	VOC_DINODIE1		Dino die sound.
 	{"BEACON", 		10,	IN_NOVAR },	//	VOC_BEACON			Beacon sound.
 
+    //Chthon CFE Note: add a sound for veterancy promotions
+    {"PROMOTED", 		10,	IN_NOVAR },
+    
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	{"NUKE_LOB", 	10,	IN_NOVAR}	//	VOC_NUKE_LOB		Mod expansion unit firing sound
 #endif //PETROGLYPH_EXAMPLE_MOD

@@ -482,6 +482,7 @@ bool Init_Game(int , char *[])
 #else
 	CCDebugString ("C&C95 - About to register CONQUER.MIX\n");
 	new MixFileClass("CONQUER.MIX");			// Cached.
+    new MixFileClass("MOD.MIX"); // Chthon CFE Note: Read our mod.mix file so we can add assets for classic mode
 	CCDebugString ("C&C95 - About to register TRANSIT.MIX\n");
 	new MixFileClass("TRANSIT.MIX");
 
@@ -605,6 +606,7 @@ bool Init_Game(int , char *[])
 	**	Cache the main game data. This operation can take a very long time.
 	*/
 	MixFileClass::Cache("CONQUER.MIX");
+    MixFileClass::Cache("MOD.MIX"); // Chthon CFE Note: Cache our mod assets too
 	if (SampleType != 0 && !Debug_Quiet) {
 		MixFileClass::Cache("SOUNDS.MIX");
 		if (Special.IsJuvenile) {

@@ -95,6 +95,7 @@ struct CFEPatchConfig
     bool BetterTibGrowth = false;
     bool TSVisceroidSpawn = false;
     bool MeanerVisceroids = false;
+    bool EnableVeterancy = false;
 	int  InfantryTiberiumAversion = 0;
     int  BuildingGap = 2;
 	int  HarvyQueueJumpCutoff = 4;

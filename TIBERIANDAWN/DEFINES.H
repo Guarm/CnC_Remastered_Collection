@@ -1686,7 +1686,14 @@ typedef enum PipEnum : unsigned char
 	PIP_HOLDING,		// "Hold"ing construction information tag.
 	PIP_ENGINEER,		// Full pip with engineer coloring.
 	PIP_CIVILIAN,		// Full pip with civilian coloring.
-	PIP_COMMANDO		// Full pip with commando coloring.
+	PIP_COMMANDO,		// Full pip with commando coloring.
+    
+    // Chthon CFE Note -- New pips for veterancy symbols
+    // There are NOT frames for these in the legacy mix files, so DON'T try to draw them in legacy mode!
+    // Need to start at 18 because glyphx uses one set of pips for both games, and RA has stuff up through 17
+    PIP_VETERANCY_RANK1 = 18,
+    PIP_VETERANCY_RANK2,
+    PIP_VETERANCY_RANK3
 } PipEnum;
 
 
@@ -2316,6 +2323,8 @@ typedef enum VocType : char{
 
 	VOC_BEACON,			// Beacon sound.
 
+    VOC_PROMOTED, //Chthon CFE Note: add a sound for veterancy promotions
+    
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	VOC_NUKE_LOB,		// Modded unit firing sound
 #endif

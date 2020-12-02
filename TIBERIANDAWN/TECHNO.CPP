@@ -124,6 +124,9 @@
 // - 6/26/2019 JAS 
 extern bool DLL_Export_Get_Input_Key_State(KeyNumType key);
 
+// Chthon CFE Note -- added so we can draw vetrancy pips directly in remastered graphics mode
+extern void DLL_Draw_Intercept(int shape_number, int x, int y, int width, int height, int flags, ObjectClass *object, const char *shape_file_name, char override_owner, int scale);
+
 
 /***************************************************************************
 **	Which shape to use depending on which facing is controlled by these arrays.
@@ -1133,6 +1136,35 @@ void TechnoClass::Draw_It(int x, int y, WindowNumberType window)
 	{
 		Draw_Pips((x-lx)+5, y+ly-3, window);
 	}
+	
+    // Chthon CFE Note -- draw vetrancy pips
+    if (Is_Selected_By_Player() && House->Is_Ally(PlayerPtr) && VeterancyRank > 0) {
+        int piprank = VeterancyRank - 1;
+        // handle remastered and legacy graphics differently
+        if (window == WINDOW_VIRTUAL){
+            // we can invoke DLL_Draw_Intercept() directly
+            // This works if the art asset is in VFX, but it does NOT work for adding frames to UI_PIP, probably because glyphx handles pips as a member of the base object rather than an independent shape
+            int vpipx = x + lx - 4 -1; //right edge, minus it's own 1/4.5 scale width, minus 1 so it doesn't clip the selection outline
+            int vpipy = y + ly -1; //bottom edge, minus 1 so it doesn't clip the selection outline (then use SHAPE_BOTTOM flag to align bottom) 
+            // move veterancy pip up if pips/ammo are in the way
+            if (width - (3 * (Class_Of().Max_Pips() + ((Techno_Type_Class()->MaxAmmo > 0) ? Techno_Type_Class()->MaxAmmo : 0))) < 6){
+                vpipy -= 4;
+            }
+            DLL_Draw_Intercept(piprank, vpipx, vpipy, 4, 6, SHAPE_BOTTOM | SHAPE_WIN_REL, this, "ZVTRN", HOUSE_NONE, 0x100);
+        }
+        else{
+            // use the pips from our custom mix file
+            void const *vpipshapefile = MixFileClass::Retrieve("ZVTRN.SHP");
+            int vpipx = x + lx - 4 -1; //right edge, minus it's own 1/4.5 scale width, minus 1 so it doesn't clip the selection outline
+            int vpipy = y + ly -6; //bottom edge, then up full height (it appears SHAPE_BOTTOM doens't actually do anything in legacy mode, and that the outline is outside the unit's box in legacy mode)
+           // move veterancy pip up if pips/ammo are in the way
+           if (width - (3 * (Class_Of().Max_Pips() + ((Techno_Type_Class()->MaxAmmo > 0) ? Techno_Type_Class()->MaxAmmo : 0))) < 6){
+                vpipy -= 5; //not sure why, but needs to be 1 higher not to overlap
+            }
+            CC_Draw_Shape(vpipshapefile, piprank, vpipx, vpipy, window, SHAPE_BOTTOM | SHAPE_WIN_REL, NULL, NULL);
+        }
+    }
+	
 }
 
 
@@ -1886,7 +1918,8 @@ void TechnoClass::AI(void)
 	DoorClass::AI();
 
     // Attack Move rework by ChthonVII
-    if (AttackMove && Is_Owned_By_Player() && (What_Am_I() == RTTI_UNIT || What_Am_I() == RTTI_INFANTRY || What_Am_I() == RTTI_AIRCRAFT)) {
+    // random guess -- let's remove Is_Owned_By_Player()
+    if (AttackMove /*&& Is_Owned_By_Player()*/ && (What_Am_I() == RTTI_UNIT || What_Am_I() == RTTI_INFANTRY || What_Am_I() == RTTI_AIRCRAFT)) {
 
         // If something is already targeted, but not in range, try for a closer target
         // But not for aircraft because the result of a constantly retargetting aircraft is disasterous (if comical)
@@ -1910,6 +1943,33 @@ void TechnoClass::AI(void)
 
     } // end of AttackMove stuff
     
+    // Chthon CFE Note: Do healing for veteran units
+    if (VeterancyRank > 1 && (Frame % 16) == 0){
+        unsigned int healthreshhold = 0x0080;
+        int rounds = 1;
+        // units that already have healing to 50% without veterancy get healing to 100%
+        // buildings get healing to 100% at rank 3 as compensation for not getting move speed
+        if (    (What_Am_I() == RTTI_UNIT && 
+                    (
+                        *((UnitClass*)this) == UNIT_HTANK ||
+                        (ActiveCFEPatchConfig.EnableHarvySelfRepair && *((UnitClass*)this) == UNIT_HARVESTER)
+                    )
+                ) ||
+                (What_Am_I() == RTTI_BUILDING && VeterancyRank == 3)
+        ){
+            healthreshhold = 0x0100;
+        }
+        if (What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_HARVESTER && VeterancyRank == 3){
+            rounds = 2;
+        }
+        for (int i=0; i<rounds; i++){
+            if (Health_Ratio() < healthreshhold){
+                Strength++;
+                Mark(MARK_CHANGE);
+            }
+        }
+    }
+    
 	/*
 	** Handle decision to re-cloak here. Process the cloaking/decloaking operation.
 	*/
@@ -1919,15 +1979,27 @@ void TechnoClass::AI(void)
 		**	If this object is uncloaked, but it can be cloaked and it thinks that it
 		**	is a good time do so, then begin cloaking.
 		*/
+        
+        // Chthon CFE Note: rank 3 veteran stealth tanks get a better cloak -- starts up faster and always works despite damage
+        bool bettercloak = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_STANK);
+        
 		if (Cloak == UNCLOAKED) {
 			// Changed for multiplayer so we can visually see the different players in the original renderer. ST - 3/13/2019 5:40PM
 			if (Is_Owned_By_Player()) Mark(MARK_CHANGE);
 			//if (IsOwnedByPlayer) Mark(MARK_CHANGE);
 			CloakingDevice.Graphic_Logic();
-			if (!Arm && CloakingDevice.Fetch_Stage()) {
-				if (Health_Ratio() > 0x0040) {
+            
+            
+            // Chthon CFE Note: rank 3 veteran stealth tanks cloak after half the usual delay if there's nothing to shoot at right now, and cloak always works despite damage
+            // (23 since veterancy RoF bonus reduced rearm from 60 to 46, so half is now 23) 
+            if (bettercloak && Arm < 24 && CloakingDevice.Fetch_Stage() && (!Target_Legal(TarCom) || !In_Range(TarCom))){
+                Do_Cloak();
+            }
+			else if (!Arm && CloakingDevice.Fetch_Stage()) {
+				if (Health_Ratio() > 0x0040 || bettercloak) {
 					Do_Cloak();
-				} else {
+				}
+				else {
 					if (Random_Pick(0, 25) == 1) {
 						Do_Cloak();
 					}
@@ -1965,8 +2037,9 @@ void TechnoClass::AI(void)
 						/*
 						**	If badly damaged, then it can never fully cloak.
 						*/
+                        // Chthon CFE Note: rank 3 veteran stealth tanks cloak works despite damage
 						case VISUAL_DARKEN:
-							if (Health_Ratio() < 0x0040 && Random_Pick(1, 3) == 1) {
+							if (Health_Ratio() < 0x0040 && !bettercloak && Random_Pick(1, 3) == 1) {
 								Cloak = UNCLOAKING;
 							}
 							break;
@@ -2279,7 +2352,9 @@ void TechnoClass::Assign_Target(TARGET target)
 int TechnoClass::Rearm_Delay(bool second) const
 {
 	if (second) {
-		return(((int)Weapons[Techno_Type_Class()->Primary].ROF * House->ROFBias) + 3);
+        //float localROFBias = 1.0 - (0.1 * VeterancyRank); // Chthon CFE Note: Since we lack room for another float, and this is the only place it's used, just compute here
+        float localROFBias = 1.0 / (1.0 + (0.1 * VeterancyRank)); // to multiply the *rate* of fire we need to multiply the *time per shot* by the inverse of the rate we want.
+        return(((int)Weapons[Techno_Type_Class()->Primary].ROF * localROFBias * House->ROFBias) + 3);
 	}
 	return(9);
 }
@@ -2363,6 +2438,32 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
     // Chthon CFE Note: Port per-unit firepower bias from RA
 	//int firepower = (weapon->Attack > 0) ? ((int)weapon->Attack * House->FirepowerBias) : 0;
  	int firepower = (weapon->Attack > 0) ? ((int)weapon->Attack * FirepowerBias * House->FirepowerBias) : 0;
+    
+    //Chthon CFE Note: Some rank 3 veteran units do extra damage against certain armor types
+    if (VeterancyRank == 3){
+        // Minigunners and Humvees get armor-piercing ammo (but only 3/4 as good as real WARHEAD_AP)
+        if (   (What_Am_I() == RTTI_INFANTRY && *((InfantryClass*)this) == INFANTRY_E1) ||
+                (What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_JEEP)
+        ){
+            if (object->Class_Of().Armor == ARMOR_WOOD){
+                firepower *= 1.125; // bring damage up as if armor effect were 0.5625 instead of 0.5
+            }
+            /*
+            else if (object->Class_Of().Armor == ARMOR_ALUMINUM){
+                firepower = (firepower * 4)/3; // bring damage up as if armor effect were 0.75 instead of 0.5625
+            }*/
+            else if (object->Class_Of().Armor == ARMOR_STEEL){
+                firepower *= 3; // bring damage up as if armor effect were 0.75 instead of 0.25
+            }
+        }
+        // Attack Cycles get high explosive missiles against infantry 
+        else if (What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BIKE){
+            if (object->Class_Of().Armor == ARMOR_NONE){
+                firepower *= 3.5; // bring damage up as if armor effect were 0.875 instead of 0.25
+            }
+        }
+    }
+    
  	bullet = new BulletClass(weapon->Fires);
 	if (bullet) {
 		bullet->Assign_Target(target);
@@ -2391,7 +2492,14 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 			IsInRecoilState = true;
 		}
 		Arm = Rearm_Delay(IsSecondShot);
-		if (tclass.IsTwoShooter) {
+        // Chthon CFE Note: light and medium tanks and turrets become two-shooters at rank 3 veterancy
+        bool veterantwoshooter = (  (VeterancyRank == 3) &&
+                                                     (  (What_Am_I() == RTTI_UNIT && ((*((UnitClass*)this) == UNIT_LTANK) || (*((UnitClass*)this) == UNIT_MTANK))) ||
+                                                        (What_Am_I() == RTTI_BUILDING && (*((BuildingClass*)this) == STRUCT_TURRET))
+                                                     )
+                                                  );
+        
+		if (tclass.IsTwoShooter || veterantwoshooter) {
 			IsSecondShot = (IsSecondShot == false);
 		}
 
@@ -2412,8 +2520,10 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 		**	now.
 		*/
 		if (a != ANIM_NONE) {
-			AnimClass * anim = new AnimClass(a, Fire_Coord(which));
-			if (anim) {
+            //Chthon CFE Note: bugfix as per https://ppmforums.com/topic-52395/the-lol-ww-wtf-omg-series/?sid=0615f7e6bbfa6f79d5b8a79981bb3258
+			//AnimClass * anim = new AnimClass(a, Fire_Coord(which));
+			AnimClass * anim = new AnimClass(a, fire_coord);
+            if (anim) {
 				anim->Attach_To(this);
 			}
 		}
@@ -2871,6 +2981,25 @@ int TechnoClass::Weapon_Range(int which) const
 	WeaponType weapon = WEAPON_NONE;
 	TechnoTypeClass const & ttype = *Techno_Type_Class();
 
+    // Chthon CFE Note: Some rank 3 veteran units get range bonus
+    // Grenadiers, Artillery, Guard Tower, Adv. Guard Tower, Obelisk, SAM Site
+    int flatbonus = 0;
+    if ( (VeterancyRank == 3) && 
+        (
+            (( What_Am_I() == RTTI_INFANTRY) && (*((InfantryClass*)this) == INFANTRY_E2)) ||
+            (( What_Am_I() == RTTI_UNIT) && (*((UnitClass*)this) == UNIT_ARTY)) ||
+            (   ( What_Am_I() == RTTI_BUILDING) && (
+                    (*((BuildingClass*)this) == STRUCT_GTOWER) ||
+                    (*((BuildingClass*)this) == STRUCT_ATOWER) ||
+                    (*((BuildingClass*)this) == STRUCT_OBELISK) ||
+                    (*((BuildingClass*)this) == STRUCT_SAM) 
+                )
+            )
+        )
+    ){
+        flatbonus = 256; // 256 leptons = 1 cell
+    }
+    
 	switch (which) {
 		case 0:
 			weapon = ttype.Primary;
@@ -2882,9 +3011,9 @@ int TechnoClass::Weapon_Range(int which) const
 	}
 	if (weapon != WEAPON_NONE) {
 		if (weapon == WEAPON_NIKE && GameToPlay == GAME_NORMAL) {
-			return(Weapons[weapon].Range*2);
+			return((Weapons[weapon].Range*2) + flatbonus);
 		}
-		return(Weapons[weapon].Range);
+		return(Weapons[weapon].Range + flatbonus);
 	}
 	return(0);
 }
@@ -3049,8 +3178,23 @@ ResultType TechnoClass::Take_Damage(int & damage, int distance, WarheadType warh
         // Chthon CFE Note: Port per-unit armor bias from RA
 		//damage = damage * House->ArmorBias;
         damage = damage * ArmorBias * House->ArmorBias;
+        
+        // Chthon CFE Note: Rank 3 veteran flame guys, chem guys, and flame tanks learned to be careful and so do much reduced damage to allies, unless force firing
+        if (    source && source->IsActive && House->Is_Ally(source) && source->TarCom != As_Target() && source->VeterancyRank == 3 &&
+                (
+                    (source->What_Am_I() == RTTI_INFANTRY && ((*((InfantryClass*)source) == INFANTRY_E4) || (*((InfantryClass*)source) == INFANTRY_E5))) ||
+                    (source->What_Am_I() == RTTI_UNIT && *((UnitClass*)source) == UNIT_FTANK)
+                )
+        ){
+            damage = 0.1 * damage;
+            if (damage == 0){
+                damage = 1;
+            }
+        }
 	}
 
+	int oldstrength = Strength; // Chthon CFE Note: save this before it changes 
+	
 	ResultType result = ObjectClass::Take_Damage(damage, distance, warhead, source);
 
 	switch (result) {
@@ -3086,6 +3230,18 @@ ResultType TechnoClass::Take_Damage(int & damage, int distance, WarheadType warh
 		case RESULT_NONE:
 			break;
 	}
+	
+	// Chthon CFE Note -- give XP when damaged by a non-ally
+	if (ActiveCFEPatchConfig.EnableVeterancy && source &&  source->IsActive && !House->Is_Ally(source)){
+        // pretend visceroids cost 5k so they give a bunch of xp
+        if (What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_VICE){
+            source->GainVeterancyXP(((oldstrength - Strength)*5000)/Class_Of().MaxStrength);
+        }
+        else {
+            source->GainVeterancyXP(((oldstrength - Strength)*Class_Of().Cost_Of())/Class_Of().MaxStrength);
+        }
+    }
+	
 	return(result);
 }
 
@@ -4883,7 +5039,7 @@ void TechnoClass::AttackMoveEnterMoveMode(){
         return;
     }
 
-    if (What_Am_I() == RTTI_INFANTRYTYPE){
+    if (What_Am_I() == RTTI_INFANTRY){
         ((FootClass*)this)->Stop_Driver(); // Butch had this for infantry only, it seems to be causing problems for other unit types
     }
     Assign_Destination(RememberedNavCom);
@@ -4893,10 +5049,159 @@ void TechnoClass::AttackMoveEnterMoveMode(){
 
 void TechnoClass::AttackMoveEnterAttackMode(){
     Assign_Destination(TARGET_NONE);
-    if (What_Am_I() == RTTI_INFANTRYTYPE){
+    if (What_Am_I() == RTTI_INFANTRY){
         ((FootClass*)this)->Stop_Driver(); // Butch had this for infantry only, it seems to be causing problems for other unit types
     }
     //((FootClass*)this)->Approach_Target(); // MissionAttack() will do this
     Assign_Mission(MISSION_ATTACK); //Set_Mission() is bad because it makes Commence() not work, and then we end up with units in impossible mission/status combinations
     Commence();
+}
+
+void TechnoClass::GainVeterancyXP(unsigned short int XP){
+    // bail if veterancy disabled
+    if (!ActiveCFEPatchConfig.EnableVeterancy){
+        return;
+    }
+    // bail if rank is already maxed (avoid possibility of integer overflow on VeterancyXP)
+    if (VeterancyRank >= 3){
+        return;
+    }
+    
+    // gain XP
+    VeterancyXP += XP;
+    int oldrank = VeterancyRank;
+    
+    // rank up to 3
+    //if (VeterancyRank < 3 && VeterancyXP >= Class_Of().Cost_Of()){ // just for now jump straight to rank 3 for testing
+    if (VeterancyRank < 3 && VeterancyXP >= 5 * Class_Of().Cost_Of()){
+        VeterancyRank = 3;
+        
+        // special bonuses for reaching rank 3:
+        
+        // infantry bonuses
+        if (What_Am_I() == RTTI_INFANTRY){
+            
+            // Minigunner gets armor-piercing ammo (handled in TechnoClass::Fire_At())
+            
+            // Grenadier gets +1 range (handled in TechnoClass::Weapon_Range())
+            
+            // Rocket infantry gets better move speed (should match rank 3 grenadier)
+            if (*((InfantryClass*)this) == INFANTRY_E3){
+                ((FootClass*)this)->SpeedBias += 0.87f;
+            }
+            
+            // flamethrowers & chem warriors do 90% reduced friendly-fire damage to allies, unless deliberately targetting the ally (handled in  TechnoClass::TakeDamage())
+            // flamethrowers & chem warriors also do 30% reduced explosion damage per rank (handled in InfantryClass::Take_Damage())
+            // flamethrowers stop taking an extra 5 damage with each hit at rank 1 (handled in InfantryClass::Take_Damage())
+            
+            // engineers gain nothing (no way to deal damage)    
+            
+            // commandos gain stealth
+            else if (*((InfantryClass*)this) == INFANTRY_RAMBO){
+                IsCloakable = true;
+            }
+        }
+        // ground vehicle bonuses
+        else if (What_Am_I() == RTTI_UNIT){
+            
+            // Mammoth tank gets speed boost (should match rank 3 medium tank)
+            if (*((UnitClass*)this) == UNIT_HTANK){
+                ((FootClass*)this)->SpeedBias += 0.62f;
+            }
+            
+            // Light and Medium Tank become two-shooters (mostly handled in TechnoClass::Fire_At())
+            else if ((*((UnitClass*)this) == UNIT_MTANK) || (*((UnitClass*)this) == UNIT_LTANK)){
+                IsSecondShot = false; //reset so that next volley will be double
+            }
+            
+            // Stealth tanks get a superior cloak, parts of which are handled in numerous places:
+            //      commence recloak twice as quickly when not targeting something in range
+            //      cloak doesn't fail when heavily damaged
+            //      90% chance to go undetected when driving past enemies who might see it
+            //      50% chance to remain cloaked/ 50% chance to "shimmer" when squishing infantry (default is 100% chance to do full uncloak)
+            //      damage reduction when cloak is active, up to 50% at full cloak
+            
+            // Flame Tanks do 90% reduced friendly-fire damage to allies, unless deliberately targetting the ally (handled in  TechnoClass::TakeDamage())
+            
+            // GDI APCs get on-board medic (handled in UnitClass::AI())
+            // NOD APCs get stealth
+            else if ((*((UnitClass*)this) == UNIT_APC) && ((Owner() == HOUSE_BAD ) || (House->ActLike == HOUSE_BAD))){
+                IsCloakable = true;
+            }
+            
+            // MLRS get more damage reduction
+            else if (*((UnitClass*)this) == UNIT_MLRS){
+                ArmorBias -= 0.2f;
+                // don't reduce damage by more than 90% (might matter in RA with crates and stuff)
+                if (ArmorBias < 0.1f){
+                    ArmorBias = 0.1f;
+                }
+            }
+            
+            // Jeep gets armor-piercing ammo (handled in TechnoClass::Fire_At())
+            
+            // Buggy gets "crusher" status
+            
+            // harvesters get doubled damage reduction (60%!) and doubled regen (handled in TechnoClass::AI())
+            else if (*((UnitClass*)this) == UNIT_HARVESTER){
+                ArmorBias -= 0.3f;
+                // don't reduce damage by more than 90% (might matter in RA with crates and stuff)
+                if (ArmorBias < 0.1f){
+                    ArmorBias = 0.1f;
+                }
+            }
+            
+            // Artillery gets +1 range (handled in TechnoClass::Weapon_Range())
+            
+            // SSM gets significantly faster reload
+            
+            // Attack Cycle gets explosive missiles vs infantry (handled in TechnoClass::Fire_At())
+            
+        }
+        // aircraft bonuses:
+        // reload twice as fast (handled in BuildingClass::Mission_Repair())
+        // repair for free on helipad (half the rate of reapir bay) (handled in AircraftClass::AI())
+        
+        // defense building bonuses:
+        // Guard Tower, Adv. Guard Tower, Obelisk, & SAM Site get +1 range (handled in TechnoClass::Weapon_Range())
+        // Turret becomes a two-shooter
+    }
+    // rank up to 2
+    else if (VeterancyRank < 2 && VeterancyXP >= 3 * Class_Of().Cost_Of()){
+        VeterancyRank = 2;
+    }
+    // rank up to 1
+    else if (VeterancyRank < 1 && VeterancyXP >= Class_Of().Cost_Of()){
+        VeterancyRank = 1;
+    }
+    
+    // do stuff if rank increased
+    if (VeterancyRank != oldrank){
+        int delta = VeterancyRank - oldrank;
+        for (int i=0; i<delta; i++){
+            FirepowerBias += 0.1f;
+            ArmorBias -= 0.1f;
+            // don't reduce damage by more than 90% (might matter in RA with crates and stuff)
+            if (ArmorBias < 0.1f){
+                ArmorBias = 0.1f;
+            }
+            if (What_Am_I() == RTTI_INFANTRY || What_Am_I() == RTTI_UNIT || What_Am_I() == RTTI_AIRCRAFT){
+                ((FootClass*)this)->SpeedBias += 0.1f;
+            }
+            // ROFBias is handled in TechnoClass::Rearm_Delay() using VeterancyRank
+            // Regen beginning at rank 2 is handled in TechnoClass::AI()
+        }
+        // play a sound for the owner only
+        if (PlayerPtr->Class->House == Owner()){
+            Sound_Effect(VOC_PROMOTED, Coord);
+        }
+        // flash for the owner only
+        Clicked_As_Target(Owner(), 18); // roughly matches the duration of the loud part of the SFX 
+        // show the pip immediately if selected
+        if (Is_Selected_By_Player()) {
+			Mark(MARK_CHANGE);
+		}
+    }
+    
+    return;
 }

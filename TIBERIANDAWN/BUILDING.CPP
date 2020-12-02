@@ -4621,6 +4621,7 @@ int BuildingClass::Mission_Attack(void)
 							if (error == FIRE_OK) {
 								Fire_At(TarCom, 0);
 								Status = SAM_LOCKING;
+                                float localROFBias = 1.0 / (1.0 + (0.1 * VeterancyRank)); // Chthon CFE Note: need to convert ROF multiplier into delay reduction
                                 // Chthon CFE Note: Smarter SAM behavior inspired by screamingchicken
                                 if (ActiveCFEPatchConfig.EnableSmarterSAMs){
                                     SAMAmmo--;
@@ -4636,10 +4637,10 @@ int BuildingClass::Mission_Attack(void)
                                         // That leaves us back at SAM_READY (although arbitrary-shot is still probably at an advantage since it probably has less far to rotate to get on target than 2-shot which has to come from N)
                                         // But... waiting 8.5 sec between volleys feels reaaaaaaally slow.
                                         // So feel free to use something lower at the expense of changing game balance.
-                                        return (TICKS_PER_SECOND*3) + ActiveCFEPatchConfig.SmarterSAMBalanceDelay;
+                                        return ((TICKS_PER_SECOND*3) + ActiveCFEPatchConfig.SmarterSAMBalanceDelay) * localROFBias;
                                     }
                                 }
-								return(TICKS_PER_SECOND*3);
+								return ((TICKS_PER_SECOND*3) * localROFBias);
 							}
 						}
 					}
@@ -4978,7 +4979,11 @@ int BuildingClass::Mission_Repair(void)
 						return(1);
 					} else {
 						int time = Bound(Fixed_To_Cardinal(TICKS_PER_SECOND, House->Power_Fraction()), 0, TICKS_PER_SECOND);
-						time = (TICKS_PER_SECOND*3) - time;
+                        time = (TICKS_PER_SECOND*3) - time;
+                        // Chthon CFE Note: rank 3 veteran helicopters reload twice as fast
+                        if (Contact_With_Whom()->VeterancyRank == 3){
+                            time = time/2;
+                        }
 						IsReadyToCommence = false;
 						return(time);
 					}

@@ -213,9 +213,14 @@ class TechnoClass :	public RadioClass,
         //Chthon CFE Note: Port per-unit firepower and armor biases from RA so we can use them for vetrancy and stuff
         float ArmorBias = 1.0;
 		float FirepowerBias = 1.0;
+        // we don't have space for ROFBias, but it's only use din one place, so we'll compute it there
         
         // Attack Move rework by ChthonVII --  Remember the intial destination in case of appearing enemies during an attack move
 		mutable TARGET RememberedNavCom; //this is unsigned short in TD, so only 2 bytes
+		
+		// Veterancy by ChthonVII
+		unsigned short int VeterancyXP = 0;
+		
         // Converted most attack-move variables into bit fields to save space, but then ended up removing most of them during attack-move rework
         // Keep the bitfield arrangment anyway so we can use the space for future mod features.
 		// We need the anonymous union & struct so we can force the zero initialization.
@@ -225,7 +230,8 @@ class TechnoClass :	public RadioClass,
 			mutable unsigned char CFEPatchFlags = 0;
 			struct{
 				mutable unsigned int AttackMove : 1;
-				mutable unsigned int CFEPatchFlagsPadding : 7; //round out to 1 byte, we can use this space later.
+                mutable unsigned int VeterancyRank : 2;
+				mutable unsigned int CFEPatchFlagsPadding : 5; //round out to 1 byte, we can use this space later.
 			};
 		};
         
@@ -234,8 +240,9 @@ class TechnoClass :	public RadioClass,
 		*/
         // Chthon CFE Note: Original padding was 16
         // firepower and armor biases eat 8 bytes
-        // Attack Move rework by ChthonVII eats 3 bytes
-		unsigned char SaveLoadPadding[5];
+        // Attack Move rework by ChthonVII eats 3 bytes (including CFEPatchFlags)
+        // Veterancy eats 2 bytes (not including CFEPatchFlags since that's counted with attack move)
+		unsigned char SaveLoadPadding[3];
 
 		/*---------------------------------------------------------------------
 		**	Constructors, Destructors, and overloaded operators.
@@ -395,6 +402,8 @@ class TechnoClass :	public RadioClass,
 void ResetAttackMove();
 void AttackMoveEnterMoveMode();
 void AttackMoveEnterAttackMode();
+
+void GainVeterancyXP(unsigned short int XP);
 
 };
 

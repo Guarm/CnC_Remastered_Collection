@@ -188,8 +188,12 @@ void DriveClass::Approach_Target(void)
 		**	infantry, AND the infantry is pretty darn close, then just try
 		**	to drive over the infantry instead of firing on it.
 		*/
+        
+        // Chthon CFE Note: rank 3 veteran buggys can crush
+        bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+        
 		TechnoClass * target = As_Techno(TarCom);
-		if (Class->Primary != WEAPON_FLAME_TONGUE && Class->IsCrusher && Distance(TarCom) < 0x0180 && target && ((TechnoTypeClass const &)(target->Class_Of())).IsCrushable) {
+		if (Class->Primary != WEAPON_FLAME_TONGUE && (Class->IsCrusher || buggycrusher) && Distance(TarCom) < 0x0180 && target && ((TechnoTypeClass const &)(target->Class_Of())).IsCrushable) {
 			Assign_Destination(TarCom);
 			return;
 		}
@@ -227,7 +231,9 @@ void DriveClass::Overrun_Square(CELL cell, bool threaten)
 {
 	CellClass * cellptr = &Map[cell];
 
-	if (Class->IsCrusher) {
+    // Chthon CFE Note: rank 3 veteran buggys can crush
+    bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+	if (Class->IsCrusher || buggycrusher) {
 		if (threaten) {
 
 			/*
@@ -243,6 +249,10 @@ void DriveClass::Overrun_Square(CELL cell, bool threaten)
 					!(GameToPlay == GAME_NORMAL && PlayerPtr->Difficulty == DIFF_EASY)) {
 					cellptr->Incoming(0, true);
 				}
+				// Chthon CFE Note: scatter the veteran infantry in any event
+				else {
+                    cellptr->Incoming(0, true, false, true);
+                }
 			}
 		} else {
 			ObjectClass * object = cellptr->Cell_Occupier();
@@ -251,6 +261,11 @@ void DriveClass::Overrun_Square(CELL cell, bool threaten)
 				if (object->Class_Of().IsCrushable && !House->Is_Ally(object) && Distance(object->Center_Coord()) < 0x80) {
 					ObjectClass * next = object->Next;
 					crushed = true;
+                    
+                    // Chthon CFE Note -- get XP for squishing a non-ally
+                    if (ActiveCFEPatchConfig.EnableVeterancy && object->IsActive && object->What_Am_I() == RTTI_INFANTRY){
+                        GainVeterancyXP((object->Strength * object->Class_Of().Cost_Of()) / object->Class_Of().MaxStrength);
+                    }
 
 					/*
 					** Record credit for the kill(s)
@@ -267,7 +282,17 @@ void DriveClass::Overrun_Square(CELL cell, bool threaten)
 					object = object->Next;
 				}
 			}
-			if (crushed) Do_Uncloak();
+			if (crushed){
+                // Chthon CFE Note: rank 3 veteran stealth tanks have a 50% chance to shimmer and a 50% chance to stay hidden, rather than fully uncloaking, when squishing infantry
+                if (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_STANK){
+                    if (Random_Pick(0,1) == 0){
+                        Do_Shimmer();
+                    }
+                }
+                else {
+                    Do_Uncloak();
+                }
+            }
 		}
 	}
 }

@@ -412,7 +412,8 @@ ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType wa
 	**	Flame thrower guys take more damage because of the exposed pilot light
 	**	on their flame gun.
 	*/
-	if (damage && res != RESULT_DESTROYED && *this == INFANTRY_E4) {
+    // Chthon CFE Note: but veteran don't since they learned safety procedures
+	if (damage && res != RESULT_DESTROYED && *this == INFANTRY_E4 && VeterancyRank == 0) {
 		damage = 5;
 		ResultType newres = FootClass::Take_Damage(damage, distance, warhead, source);
 		res = MAX(res, newres);
@@ -433,7 +434,12 @@ ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType wa
 		*/
 		if (*this == INFANTRY_E4) {
 			new AnimClass(ANIM_NAPALM1, Coord);
-			Explosion_Damage(Coord, 80, 0, WARHEAD_FIRE);
+            // Chthon CFE Note: flamethrower death explosions scale down with veterancy rank
+            // Thematically, b/c they're low on fuel
+            // Balance-wise, b/c the point of their special veterancy bonuses is to make them less of a danger to your other troops
+            float vetmultiplier = 1.0;
+            vetmultiplier -= (0.3 * VeterancyRank);
+			Explosion_Damage(Coord, 80*vetmultiplier, 0, WARHEAD_FIRE);
 		}
 
 		if (*this == INFANTRY_E2) {
@@ -443,7 +449,12 @@ ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType wa
 
 		if (*this == INFANTRY_E5) {
 			new AnimClass(ANIM_CHEM_BALL, Coord);
-			Explosion_Damage(Coord, 80, 0, WARHEAD_HE);
+            // Chthon CFE Note: Chem warrior death explosions scale down with veterancy rank
+            // Thematically, b/c they're low on fuel
+            // Balance-wise, b/c the point of their special veterancy bonuses is to make them less of a danger to your other troops
+            float vetmultiplier = 1.0;
+            vetmultiplier -= (0.3 * VeterancyRank);
+			Explosion_Damage(Coord, 80*vetmultiplier, 0, WARHEAD_HE);
 		}
 
 		VocType sound;

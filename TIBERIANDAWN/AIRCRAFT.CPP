@@ -718,6 +718,23 @@ int AircraftClass::Mission_Hunt(void)
 void AircraftClass::AI(void)
 {
 	Validate();
+    
+    // Chthon CFE Note: rank 3 veteran helicopters repair for free while docked (at half the rate as repair bay)
+    if (VeterancyRank == 3 && Altitude == 0 && !IsLanding && !IsTakingOff && Health_Ratio() < 0x0100){
+        TechnoClass * tech = Contact_With_Whom();
+        if (tech && tech->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)tech) == STRUCT_HELIPAD && ::Distance(Center_Coord(), tech->Docking_Coord()) < 0x0040){
+            int repaircycle = Bound(Fixed_To_Cardinal(TICKS_PER_SECOND, House->Power_Fraction()), 0, TICKS_PER_SECOND);
+            repaircycle = 2*((TICKS_PER_SECOND + (TICKS_PER_SECOND/2)) - repaircycle);
+            if (Frame % repaircycle == 0){
+                Strength += Class->Repair_Step();
+                if (Strength > Class_Of().MaxStrength){
+                    Strength = Class_Of().MaxStrength;
+                }
+            }
+        }
+    }
+    
+    
 	/*
 	**	A Mission change can always occur if the aircraft is landed or flying.
 	*/

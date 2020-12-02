@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+
+<SFXEvents>
+
+	<SFXEvent Name="TDR_SFX_PROMOTED" Preset="_PRESET_MD_MOBIUS_2D">
+		<IsPreset> False </IsPreset>
+		<SampleNamesList>
+			<entry> UNITPROMOTED.WAV </entry>
+		</SampleNamesList>
+	</SFXEvent>
+    
+    <SFXEvent Name="TDC_SFX_PROMOTED" Preset="_PRESET_MD_MOBIUS_2D">
+		<IsPreset> False </IsPreset>
+		<SampleNamesList>
+			<entry> UNITPROMOTED.WAV </entry>
+		</SampleNamesList>
+	</SFXEvent>
+
+</SFXEvents>
+
+
+
+
+
+

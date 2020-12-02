@@ -1774,7 +1774,8 @@ int CellClass::Clear_Icon(void) const
  * HISTORY:                                                                                    *
  *   01/10/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void CellClass::Incoming(COORDINATE threat, bool forced, bool nokidding)
+// Chthon CFE Note: altered function to (1) make veteran infantry scatter automatically, and (2) add a mode for making ONLY veteran infantry scatter
+void CellClass::Incoming(COORDINATE threat, bool forced, bool nokidding, bool veteransonly)
 {
 	Validate();
 	ObjectClass * object = NULL;
@@ -1782,12 +1783,14 @@ void CellClass::Incoming(COORDINATE threat, bool forced, bool nokidding)
 	object = Cell_Occupier();
 	while (object) {
 
+        bool imavet = ((object->What_Am_I() == RTTI_INFANTRY) && ((TechnoClass *)object)->VeterancyRank > 0);
+        
 		/*
 		**	Special check to make sure that friendly units never scatter.
 		*/
-		if (nokidding || Special.IsScatter || (object->Is_Techno() && !((TechnoClass *)object)->House->IsHuman)) {
+		if ((nokidding || Special.IsScatter || (object->Is_Techno() && !((TechnoClass *)object)->House->IsHuman) || imavet) && (!veteransonly || imavet)) {
 			if (object->What_Am_I() == RTTI_INFANTRY) {
-				object->Scatter(threat, forced, nokidding);
+				object->Scatter(threat, forced, (nokidding || imavet));
 			} else {
 				object->Scatter(threat, forced, nokidding);
 //				object->Scatter(threat, false);

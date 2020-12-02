@@ -424,7 +424,14 @@ void UnitClass::AI(void)
 			if (Reload.Expired()) {
 				Ammo++;
 				if (Ammo < Class->MaxAmmo) {
-					Reload = TICKS_PER_SECOND*30;
+                    // Chthon CFE Note: veteran SSM should reload faster too, or RoF bonus is kinda pointless, then rank 3 should get even faster reload
+                    float localROFBias = 1.0 / (1.0 + (0.1 * VeterancyRank)); // to multiply the *rate* of fire we need to multiply the *time per shot* by the inverse of the rate we want.
+                    if (VeterancyRank == 3){
+                        Reload = (TICKS_PER_SECOND*20)*localROFBias;
+                    }
+                    else {
+                        Reload = (TICKS_PER_SECOND*30)*localROFBias;
+                    }
 				}
 				Mark(MARK_CHANGE);
 			}
@@ -445,9 +452,10 @@ void UnitClass::AI(void)
 	**	If this is a vehicle that heals itself (e.g., Mammoth Tank), then it will perform
 	**	the heal logic here.
 	*/
-	if (*this == UNIT_HTANK  && (Frame % 16) == 0 && Health_Ratio() < 0x0080) {
+	if (*this == UNIT_HTANK  && (Frame % 16) == 0 && Health_Ratio() < 0x0080 && VeterancyRank < 2) {
 		Strength++;
 		Mark(MARK_CHANGE);
+        // dealt with in TECHNO.CPP if vetrancy >=2
 	}
 	else if (*this == UNIT_VICE && Map[Coord_Cell(Coord)].Land_Type() == LAND_TIBERIUM && Health_Ratio() < 0x0100 && (Frame % 16) == 0) {
 		Strength++;
@@ -459,10 +467,28 @@ void UnitClass::AI(void)
         }
 		Mark(MARK_CHANGE);
 	}
-	else if (ActiveCFEPatchConfig.EnableHarvySelfRepair && *this == UNIT_HARVESTER && (Frame % 16) == 0 && Health_Ratio() < 0x0080) {
+	else if (ActiveCFEPatchConfig.EnableHarvySelfRepair && *this == UNIT_HARVESTER && (Frame % 16) == 0 && Health_Ratio() < 0x0080 && VeterancyRank < 2) {
 		++Strength;
 		Mark(MARK_CHANGE);
+        // dealt with in TECHNO.CPP if vetrancy >=2
 	}
+	// Rank 3 veteran GDI APCs have an onboard medic to heal passengers (2 hp per 7 ticks)
+	else if ((*this == UNIT_APC) && (VeterancyRank == 3) && ((Owner() == HOUSE_GOOD ) || (House->ActLike == HOUSE_GOOD)) && ((Frame % 7) == 0)){
+        ObjectClass const * object = Attached_Object();
+		for (int pindex = 0; pindex < Class_Of().Max_Pips(); pindex++) {
+			if (object) {
+				if (object->What_Am_I() == RTTI_INFANTRY) {
+					if (((InfantryClass *)object)->Health_Ratio() < 0x0100) {
+                        ((InfantryClass *)object)->Strength+=2;
+                        if (((InfantryClass *)object)->Strength > ((InfantryClass *)object)->Class->MaxStrength){
+                            ((InfantryClass *)object)->Strength = ((InfantryClass *)object)->Class->MaxStrength;
+                        }
+                    }
+				}
+				object = object->Next;
+			}
+        }
+    }
 	// Chthon CFE Note: Additional base heal for meaner visceroids
 	if (ActiveCFEPatchConfig.MeanerVisceroids && *this == UNIT_VICE  && (Frame % 16) == 0 && Health_Ratio() < 0x0100) {
 		Strength+=2;
@@ -958,6 +984,25 @@ ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhea
 	**	In order for a this to be damaged, it must either be a unit
 	**	with a crew or a sandworm.
 	*/
+    
+    // Chthon CFE Note: rank 3 veteran stealth tanks take less damage when cloaked, up to 50% depending on cloak stage
+    if (*this == UNIT_STANK && VeterancyRank == 3){
+        float cloakmultiplier = 1.0;
+        if (Cloak == CLOAKED){
+            cloakmultiplier = 0.5;
+        }
+        else if (Cloak == CLOAKING){
+            cloakmultiplier = 1.0 - (0.5 * ((float)CloakingDevice.Fetch_Stage()/38.0)); //MAX_UNCLOAK_STAGE is defined as 38 in TECHNO.CPP
+        }
+        else if (Cloak == UNCLOAKING){            
+            cloakmultiplier = 0.5 + (0.5 * ((float)CloakingDevice.Fetch_Stage()/38.0)); //MAX_UNCLOAK_STAGE is defined as 38 in TECHNO.CPP
+        }
+        damage = damage * cloakmultiplier;
+        if (damage < 1){
+            damage = 1;
+        }
+    }
+    
 	res = TarComClass::Take_Damage(damage, distance, warhead, source);
 
 	if (res == RESULT_DESTROYED) {
@@ -977,6 +1022,11 @@ ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhea
 				Sound_Effect(VOC_DINODIE1, Coord);
 			}
 
+			// Chthon CFE Note: ANIM_CHEM_BALL makes more sense for visceroids than ordinary explosion. Use that.
+			if (ActiveCFEPatchConfig.MeanerVisceroids && *this == UNIT_VICE){
+                anim = ANIM_CHEM_BALL;
+            }
+			
 			new AnimClass(anim, Coord);
 
 			/*
@@ -984,7 +1034,16 @@ ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhea
 			**	equivalent to a napalm strike.
 			*/
 			if (Class->Explosion == ANIM_NAPALM3) {
-				Explosion_Damage(Coord, 200, source, WARHEAD_FIRE);
+                // Chthon CFE Note: flame tank death explosion decreases with veterancy rank
+                // thematically, b/c they're low on fuel; balance-wise b/c the point of their special veterancy bonuses is to make them less of a liability to your own troops
+                /* // on second thought, taking this out b/c flame tank is likely to be up in the face of enemy units
+                float vetfactor = 1.0;
+                if (*((UnitClass*)this) == UNIT_FTANK){
+                    vetfactor -= (0.3 * VeterancyRank);
+                }
+                */
+				//Explosion_Damage(Coord, 200*vetfactor, source, WARHEAD_FIRE);
+                Explosion_Damage(Coord, 200, source, WARHEAD_FIRE);
 			}
 
 			/*
@@ -1158,13 +1217,17 @@ ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhea
 			**	player. In hard mode, they always do. In normal mode, they only overrun past
 			**	mission #8.
 			*/
+            
+            // Chthon CFE Note: rank 3 veteran buggys can crush
+            bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+            
 			if ((Class->Primary == WEAPON_NONE || (Distance(source) < 0x0180 && BulletTypeClass::As_Reference(Weapons[Class->Primary].Fires).Warhead != WARHEAD_FIRE)) &&
 						(GameToPlay != GAME_NORMAL ||
 						*this != UNIT_HARVESTER ||
 						BuildLevel > 8 ||
 						PlayerPtr->Difficulty == DIFF_HARD) &&
 						!(GameToPlay == GAME_NORMAL && PlayerPtr->Difficulty == DIFF_EASY) &&
-						Class->IsCrusher &&  source->Is_Techno() && ((TechnoTypeClass const &)source->Class_Of()).IsCrushable) {
+						(Class->IsCrusher || buggycrusher) &&  source->Is_Techno() && ((TechnoTypeClass const &)source->Class_Of()).IsCrushable) {
 
 				Assign_Destination(source->As_Target());
 				Assign_Mission(MISSION_MOVE);
@@ -3505,7 +3568,11 @@ MoveBitType UnitClass::Blocking_Object(TechnoClass const *techno, CELL cell) con
 			/*
 			** Can we just run it over?
 			*/
-			if (techno->Class_Of().IsCrushable && (cellptr->Flag.Composite & 0xE0) == 0 && Class->IsCrusher) {
+            
+            // Chthon CFE Note: rank 3 veteran buggys can crush
+            bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+            
+			if (techno->Class_Of().IsCrushable && (cellptr->Flag.Composite & 0xE0) == 0 && (Class->IsCrusher || buggycrusher)) {
 
 				/*
 				** Now lets run it over.
@@ -3670,7 +3737,11 @@ MoveType UnitClass::Can_Enter_Cell(CELL cell, FacingType ) const
 					**	cell, don't consider the cell impassible. This is true even if the unit
 					**	doesn't contain a legitimate weapon.
 					*/
-					if (!Class->IsCrusher || !obj->Class_Of().IsCrushable) {
+                    
+                    // Chthon CFE Note: rank 3 veteran buggys can crush
+                    bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+                    
+					if ((!Class->IsCrusher && !buggycrusher) || !obj->Class_Of().IsCrushable) {
 
 						/*
 						**	Any non-allied blockage is considered impassible if the unit
@@ -3735,7 +3806,11 @@ MoveType UnitClass::Can_Enter_Cell(CELL cell, FacingType ) const
 				**	cell destroyable if it has a weapon. If neither case applies, then
 				**	this vehicle should avoid the cell altogether.
 				*/
-				if (!Class->IsCrusher) {
+                
+                // Chthon CFE Note: rank 3 veteran buggys can crush
+                bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+                
+				if (!Class->IsCrusher && !buggycrusher) {
 					if (Class->Primary != WEAPON_NONE) {
 						retval = MOVE_DESTROYABLE;
 					} else {
@@ -4131,7 +4206,11 @@ ActionType UnitClass::What_Action(ObjectClass * object) const
 	**	the object as a movable location.
 	*/
 	if (action == ACTION_ATTACK && !Can_Player_Fire()) {
-		if (Class->IsCrusher && object->Class_Of().IsCrushable) {
+        
+        // Chthon CFE Note: rank 3 veteran buggys can crush
+        bool buggycrusher = (VeterancyRank == 3 && What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_BUGGY);
+
+		if ((Class->IsCrusher || buggycrusher) && object->Class_Of().IsCrushable) {
 			action = ACTION_MOVE;
 		} else {
 			action = ACTION_SELECT;
