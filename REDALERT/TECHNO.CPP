@@ -3284,7 +3284,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 	**	Get the location where the projectile should appear.
 	*/
 	fire_coord = Fire_Coord(which);
-
+    
 	/*
 	**	If the projectile is a homing type (such as a missile), then it will
 	**	launch in the direction the turret is facing, NOT necessarily the same
@@ -3361,14 +3361,18 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
   		/*
 		**	Play any sound effect tied to this weapon type.
 		*/
-		Sound_Effect(weapon->Sound, Fire_Coord(which));
-
+        //Chthon CFE Note: bugfix as per https://ppmforums.com/topic-52395/the-lol-ww-wtf-omg-series/?sid=0615f7e6bbfa6f79d5b8a79981bb3258
+		//Sound_Effect(weapon->Sound, Fire_Coord(which));
+		Sound_Effect(weapon->Sound, fire_coord);
+        
 		/*
 		**	If there is a special firing animation, then create and attach it
 		**	now.
 		*/
 		if (a != ANIM_NONE) {
-			AnimClass * anim = new AnimClass(a, Fire_Coord(which));
+            //Chthon CFE Note: bugfix as per https://ppmforums.com/topic-52395/the-lol-ww-wtf-omg-series/?sid=0615f7e6bbfa6f79d5b8a79981bb3258
+			//AnimClass * anim = new AnimClass(a, Fire_Coord(which));
+            AnimClass * anim = new AnimClass(a, fire_coord);
 			if (anim != NULL) {
 				anim->Attach_To(this);
 			}

@@ -59,6 +59,7 @@ void Populate_CFE_Patch_Config_From_INI(const INIClass& ini)
 	GetSetting(ActiveCFEPatchConfig.EnableSafeSabotage      , "FEATURES", "SAFE_SABOTAGE");
     GetSetting(ActiveCFEPatchConfig.EnableSmarterAircraft      , "FEATURES", "SMARTER_AIRCRAFT");
     GetSetting(ActiveCFEPatchConfig.BetterOreGrowth      , "FEATURES", "BETTER_ORE_GROWTH");
+    GetSetting(ActiveCFEPatchConfig.EnableInaccuracyBugfix      , "FEATURES", "INACCURACY_BUGFIX");
 
 	//Settings
 	GetSetting(ActiveCFEPatchConfig.HarvyQueueJumpCutoff	, "SETTINGS", "QUEUE_JUMP_CUTOFF");
