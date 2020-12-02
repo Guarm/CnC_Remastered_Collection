@@ -7078,7 +7078,7 @@ void TechnoClass::AttackMoveEnterMoveMode(){
         return;
     }
     
-    if (What_Am_I() == RTTI_INFANTRYTYPE){
+    if (What_Am_I() == RTTI_INFANTRY){
         ((FootClass*)this)->Stop_Driver(); // Butch had this for infantry only, it seems to be causing problems for other unit types
     }
     Assign_Destination(RememberedNavCom);
@@ -7088,7 +7088,7 @@ void TechnoClass::AttackMoveEnterMoveMode(){
 
 void TechnoClass::AttackMoveEnterAttackMode(){
     Assign_Destination(TARGET_NONE);
-    if (What_Am_I() == RTTI_INFANTRYTYPE){
+    if (What_Am_I() == RTTI_INFANTRY){
         ((FootClass*)this)->Stop_Driver(); // Butch had this for infantry only, it seems to be causing problems for other unit types
     }
     //((FootClass*)this)->Approach_Target(); // MissionAttack() will do this
