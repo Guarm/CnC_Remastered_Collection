@@ -111,6 +111,14 @@ struct CFEPatchConfig
 	int  WallBuildLength = 5;
     int SmarterSAMAmmo = 2;
     int  SmarterSAMBalanceDelay = 0;
+    
+    // fixup for LAN multiplayer
+    // doesn't work -- rendering is always controlled by the server's DLL
+    //char RealMPlayerName[MPLAYER_NAME_MAX] = "";
+    //bool IKnowWhoIAm = false;
+    //HouseClass* RealPlayerPtr = NULL;
+    //HouseClass* SavedPlayerPtr = NULL;
+    //int RealLocalPlayerIndex = -1;
 };
 
 extern CFEPatchConfig ActiveCFEPatchConfig;

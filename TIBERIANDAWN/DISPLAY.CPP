@@ -3531,7 +3531,23 @@ void DisplayClass::Mouse_Right_Press(void)
  *=============================================================================================*/
 void DisplayClass::Mouse_Left_Up(bool shadow, ObjectClass * object, ActionType action, bool wwsmall)
 {
-	IsTentative = false;
+
+    // Chthon CFE Note: Failed attempt at identifying the real local player
+    // Code works, but the server's's DLL is doing everything for the clients, so result is always "I'm the server"
+    /*
+    if (Frame % 75 == 0 && ActiveCFEPatchConfig.IKnowWhoIAm){
+        COORDINATE mousecoord = Map.Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y());
+        if (ActiveCFEPatchConfig.RealLocalPlayerIndex == 0){
+            new AnimClass(ANIM_CHEM_BALL, mousecoord);
+        }
+        else if (ActiveCFEPatchConfig.RealLocalPlayerIndex == 1){
+            new AnimClass(ANIM_NAPALM1, mousecoord);
+        }
+        //ANIM_ART_EXP1
+    }
+    */
+    
+    IsTentative = false;
 
 	/*
 	**	Don't allow selection of an object that is located in shadowed terrain.
@@ -4018,7 +4034,7 @@ extern int GlyphXClientSidebarWidthInLeptons;
  *=============================================================================================*/
 void DisplayClass::Set_Tactical_Position(COORDINATE coord)
 {
-	/*
+    /*
 	**	Bound the desired location to fit the legal map edges.
 	*/
 	int xx = 0;// Coord_X(coord) - Cell_To_Lepton(MapCellX);

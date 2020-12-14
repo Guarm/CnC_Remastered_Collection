@@ -992,4 +992,5 @@ bool CFE_Patch_Can_Have_Rally_Point(const ObjectClass& object);
 bool CFE_Patch_Should_Extend_Walls();
 bool CFE_Patch_Unit_Should_Rally(const TechnoClass& object);
 int CFE_Patch_FullRange_Random_Pick(int min, int max);
+//void CFE_Patch_MP_Switch_Player_Context(const bool toreal);
 void Initialise_CFE_Patch_Config();

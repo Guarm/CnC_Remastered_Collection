@@ -1,6 +1,7 @@
 #include "FUNCTION.H"
 
 extern bool DLL_Export_Get_Input_Key_State(KeyNumType key);
+//extern void Logic_Switch_Player_Context(HouseClass *house);
 
 //Disable A10s in missions if the player has no buildings
 bool CFE_Patch_A10_Override(const ObjectTypeClass& object, const HousesType house)
@@ -132,3 +133,88 @@ int CFE_Patch_FullRange_Random_Pick(int min, int max){
     } while (fullrangerandom > ceiling);
     return (fullrangerandom % adjustedmax) + min;
 }
+
+
+/* // Unfortunately, this, works as intended (if you give it the first 11 characters of SteamID as your name) but doesn't solve the problem.
+ * // Turns out the server is doing ALL the display work for the clients.
+ * // In fact, clients' DLLs are never called to do anything at all, and probably aren't even loaded.
+ * // So all this accomplishes is identifying who the server is. Which is useless to what we wanted to do.
+
+// Chthon CFE Note: Switch player context to or from your real local player ID
+// input: true to switch TO real local player ID, false to switch FROM real local player ID back to whatever it was before
+void CFE_Patch_MP_Switch_Player_Context(const bool toreal){
+  
+    /* 
+     * Generally speaking, there are 3 ways we could do this:
+     * 1. Find some function that we can be absolutely certain will always be called for its first run with your real local PlayerPtr.
+     * This would be ideal since it would be both reliable and fully automatic.
+     * Unfortunately, it's really hard to track one down given the unreliability of the log functions.
+     * 2. What we do here -- make the user give us the real player name via the ini file, then match that to a PlayerPtr
+     * This is 100% accurate, but not fully automatic :(
+     * 3. Find the starting location with the shortest distance to the mouse location on the first frame, and grab the associated PlayerPtr
+     * This is fully automatic, but might get the wrong answer on some maps.  
+     */
+    
+    /* continue commenting out
+    
+    //CFE_Debug_Printf("CFE_Patch_MP_Switch_Player_Context called");
+    
+    // do nothing if not multiplayer 
+    if (GameToPlay != GAME_GLYPHX_MULTIPLAYER){
+        return;
+    }
+    
+    //CFE_Debug_Printf("break1");
+    
+    // if we don't know who we are yet, figure it out
+    if (!ActiveCFEPatchConfig.IKnowWhoIAm){
+        //CFE_Debug_Printf("break2");
+        // give up if we didn't get a string from the ini to work with
+        if (strlen(ActiveCFEPatchConfig.RealMPlayerName) == 0){
+            return;
+        }
+        //CFE_Debug_Printf("break3");
+        for (int i=0 ; i<MPlayerCount; i++) {
+            HouseClass* candidate_player_ptr = HouseClass::As_Pointer(MPlayerHouses[i]);
+            //CFE_Debug_Printf("i is %i, From INI |%s| versus from pointer |%s|", i, ActiveCFEPatchConfig.RealMPlayerName, candidate_player_ptr->Name);
+            if (strcmp(ActiveCFEPatchConfig.RealMPlayerName, candidate_player_ptr->Name) == 0){
+                ActiveCFEPatchConfig.RealPlayerPtr = candidate_player_ptr;
+                ActiveCFEPatchConfig.RealLocalPlayerIndex = i;
+                ActiveCFEPatchConfig.IKnowWhoIAm = true;
+                //CFE_Debug_Printf("From INI |%s| MATCHED from pointer |%s|", ActiveCFEPatchConfig.RealMPlayerName, candidate_player_ptr->Name);
+                break;
+            }
+        }
+        //CFE_Debug_Printf("break4");
+        // give up if nothing matched
+        if (!ActiveCFEPatchConfig.IKnowWhoIAm){
+            //CFE_Debug_Printf("fail after break4");
+            return;
+        }
+    }
+    //CFE_Debug_Printf("break 5?!");
+    
+    // change to real local player ID
+    if (toreal){
+        // do nothing if we have no real PlayerPtr to change to
+        if (!ActiveCFEPatchConfig.RealPlayerPtr){
+            return;
+        }
+        // save current ID
+        ActiveCFEPatchConfig.SavedPlayerPtr = PlayerPtr;
+        // do the switch (seems like Logic_Switch_Player_Context() and Set_Player_Context() have the same effect, differing only in how you specify the house you want in the input)
+        Logic_Switch_Player_Context(ActiveCFEPatchConfig.RealPlayerPtr);
+    }
+    // change from real local ID back to what it was before
+    else {
+        // do nothing if we don't have a saved PlayerPtr to go back to
+        if (!ActiveCFEPatchConfig.SavedPlayerPtr){
+            return;
+        }
+        Logic_Switch_Player_Context(ActiveCFEPatchConfig.SavedPlayerPtr);
+        ActiveCFEPatchConfig.SavedPlayerPtr = NULL;
+    }
+    
+    return;
+}
+*/

@@ -126,7 +126,8 @@ extern bool DLL_Export_Get_Input_Key_State(KeyNumType key);
 
 // Chthon CFE Note -- added so we can draw vetrancy pips directly in remastered graphics mode
 extern void DLL_Draw_Intercept(int shape_number, int x, int y, int width, int height, int flags, ObjectClass *object, const char *shape_file_name, char override_owner, int scale);
-
+// and need this so we can play the veterancy rank up sound for a specific player only
+extern void On_Sound_Effect(const HouseClass* player_ptr, int sound_effect_index, const char* extension, int variation, COORDINATE coord);
 
 /***************************************************************************
 **	Which shape to use depending on which facing is controlled by these arrays.
@@ -1138,30 +1139,52 @@ void TechnoClass::Draw_It(int x, int y, WindowNumberType window)
 	}
 	
     // Chthon CFE Note -- draw vetrancy pips
-    if (Is_Selected_By_Player() && House->Is_Ally(PlayerPtr) && VeterancyRank > 0) {
+    if (VeterancyRank > 0){
         int piprank = VeterancyRank - 1;
         // handle remastered and legacy graphics differently
+        // remastered rendering
         if (window == WINDOW_VIRTUAL){
-            // we can invoke DLL_Draw_Intercept() directly
-            // This works if the art asset is in VFX, but it does NOT work for adding frames to UI_PIP, probably because glyphx handles pips as a member of the base object rather than an independent shape
-            int vpipx = x + lx - 4 -1; //right edge, minus it's own 1/4.5 scale width, minus 1 so it doesn't clip the selection outline
-            int vpipy = y + ly -1; //bottom edge, minus 1 so it doesn't clip the selection outline (then use SHAPE_BOTTOM flag to align bottom) 
-            // move veterancy pip up if pips/ammo are in the way
-            if (width - (3 * (Class_Of().Max_Pips() + ((Techno_Type_Class()->MaxAmmo > 0) ? Techno_Type_Class()->MaxAmmo : 0))) < 6){
-                vpipy -= 4;
+            // only draw pip when selected by its owner
+            // GlyphX can't use PlayerPtr in conditionals here because it always points to the player acting as the server in LAN multiplayer
+            // Instead DLL_Draw_Intercept() has been rigged to hide the pip from everyone but the owner
+            if (Is_Selected_By_Player(House)){
+                // we can invoke DLL_Draw_Intercept() directly
+                // This works if the art asset is in VFX, but it does NOT work for adding frames to UI_PIP,
+                // probably because GlyphX handles pips as a member of the base object rather than an independent shape
+                int vpipx = x + lx - 2 -1; //right edge, minus half its own 1/4.5 scale width, minus 1 so it doesn't clip the selection outline
+                int vpipy = y + ly - 3 - 1; //bottom edge, minus half its own 1/4.5 scale height, minus 1 so it doesn't clip the selection outline
+                
+                // move veterancy pip up if pips/ammo are in the way
+                if (width - (3 * (Class_Of().Max_Pips() + ((Techno_Type_Class()->MaxAmmo > 0) ? Techno_Type_Class()->MaxAmmo : 0))) < 6){
+                    vpipy -= 4;
+                }
+                
+                // workaround for GlyphX bug where pips appear too low on infantry on PCs other than the server
+                if (PlayerPtr != House && What_Am_I() == RTTI_INFANTRY){
+                    vpipy -= 6;
+                }
+                
+                // try without SHAPE_BOTTOM since that might be cause of placement bug when server and client have different resolutions
+                //DLL_Draw_Intercept(piprank, vpipx, vpipy, 4, 6, SHAPE_BOTTOM | SHAPE_WIN_REL, this, "ZVTRN", HOUSE_NONE, 0x100);
+                //DLL_Draw_Intercept(piprank, vpipx, vpipy, 4, 6, SHAPE_WIN_REL, this, "ZVTRN", HOUSE_NONE, 0x100);
+                DLL_Draw_Intercept(piprank, vpipx, vpipy, 4, 6, SHAPE_WIN_REL | SHAPE_CENTER, this, "ZVTRN", HOUSE_NONE, 0x100);
             }
-            DLL_Draw_Intercept(piprank, vpipx, vpipy, 4, 6, SHAPE_BOTTOM | SHAPE_WIN_REL, this, "ZVTRN", HOUSE_NONE, 0x100);
         }
-        else{
-            // use the pips from our custom mix file
-            void const *vpipshapefile = MixFileClass::Retrieve("ZVTRN.SHP");
-            int vpipx = x + lx - 4 -1; //right edge, minus it's own 1/4.5 scale width, minus 1 so it doesn't clip the selection outline
-            int vpipy = y + ly -6; //bottom edge, then up full height (it appears SHAPE_BOTTOM doens't actually do anything in legacy mode, and that the outline is outside the unit's box in legacy mode)
-           // move veterancy pip up if pips/ammo are in the way
-           if (width - (3 * (Class_Of().Max_Pips() + ((Techno_Type_Class()->MaxAmmo > 0) ? Techno_Type_Class()->MaxAmmo : 0))) < 6){
-                vpipy -= 5; //not sure why, but needs to be 1 higher not to overlap
-            }
-            CC_Draw_Shape(vpipshapefile, piprank, vpipx, vpipy, window, SHAPE_BOTTOM | SHAPE_WIN_REL, NULL, NULL);
+        // legacy rendering
+        else {
+             // only draw pip when selected by its owner
+             // we can do this here since PlayerPtr always points to the human in single player
+             if (Is_Selected_By_Player(House) && House->Is_Ally(PlayerPtr)){
+                 // use the pips from our custom mix file
+                void const *vpipshapefile = MixFileClass::Retrieve("ZVTRN.SHP");
+                int vpipx = x + lx - 4 -1; //right edge, minus it's own 1/4.5 scale width, minus 1 so it doesn't clip the selection outline
+                int vpipy = y + ly -6; //bottom edge, then up full height (it appears SHAPE_BOTTOM doens't actually do anything in legacy mode, and that the outline is outside the unit's box in legacy mode)
+                // move veterancy pip up if pips/ammo are in the way
+                if (width - (3 * (Class_Of().Max_Pips() + ((Techno_Type_Class()->MaxAmmo > 0) ? Techno_Type_Class()->MaxAmmo : 0))) < 6){
+                    vpipy -= 5; //not sure why, but needs to be 1 higher not to overlap
+                }
+                CC_Draw_Shape(vpipshapefile, piprank, vpipx, vpipy, window, SHAPE_BOTTOM | SHAPE_WIN_REL, NULL, NULL);
+             }
         }
     }
 	
@@ -1918,8 +1941,7 @@ void TechnoClass::AI(void)
 	DoorClass::AI();
 
     // Attack Move rework by ChthonVII
-    // random guess -- let's remove Is_Owned_By_Player()
-    if (AttackMove /*&& Is_Owned_By_Player()*/ && (What_Am_I() == RTTI_UNIT || What_Am_I() == RTTI_INFANTRY || What_Am_I() == RTTI_AIRCRAFT)) {
+    if (AttackMove && (What_Am_I() == RTTI_UNIT || What_Am_I() == RTTI_INFANTRY || What_Am_I() == RTTI_AIRCRAFT)) {
 
         // If something is already targeted, but not in range, try for a closer target
         // But not for aircraft because the result of a constantly retargetting aircraft is disasterous (if comical)
@@ -1944,25 +1966,31 @@ void TechnoClass::AI(void)
     } // end of AttackMove stuff
     
     // Chthon CFE Note: Do healing for veteran units
-    if (VeterancyRank > 1 && (Frame % 16) == 0){
-        unsigned int healthreshhold = 0x0080;
-        int rounds = 1;
-        // units that already have healing to 50% without veterancy get healing to 100%
-        // buildings get healing to 100% at rank 3 as compensation for not getting move speed
-        if (    (What_Am_I() == RTTI_UNIT && 
-                    (
-                        *((UnitClass*)this) == UNIT_HTANK ||
-                        (ActiveCFEPatchConfig.EnableHarvySelfRepair && *((UnitClass*)this) == UNIT_HARVESTER)
-                    )
-                ) ||
-                (What_Am_I() == RTTI_BUILDING && VeterancyRank == 3)
-        ){
-            healthreshhold = 0x0100;
-        }
+    // 1 hp per 16 frames turned out to be insanely strong from low HP units,
+    // so redoing this so it's 1/600th of maxhp per 16 frames
+    // That should keep the rate for Mammoth Tanks and harvesters the same as before, while everything else scales accordingly
+    if (VeterancyRank > 1 && Strength){ //check for non-zero Strength so we don't heal things in the middle of death animation
+        int healcycle = 9600 / Class_Of().MaxStrength;  // = (600/Max)*16
         if (What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_HARVESTER && VeterancyRank == 3){
-            rounds = 2;
+            healcycle = healcycle / 2;
         }
-        for (int i=0; i<rounds; i++){
+        if (healcycle == 0){
+            healcycle = 1;
+        }
+        if ((Frame % healcycle) == 0){
+            unsigned int healthreshhold = 0x0080;
+            // units that already have healing to 50% without veterancy get healing to 100%
+            // buildings get healing to 100% at rank 3 as compensation for not getting move speed
+            if (    (What_Am_I() == RTTI_UNIT && 
+                        (
+                            *((UnitClass*)this) == UNIT_HTANK ||
+                            ((ActiveCFEPatchConfig.EnableHarvySelfRepair || VeterancyRank == 3) && *((UnitClass*)this) == UNIT_HARVESTER)
+                        )
+                    ) ||
+                    (What_Am_I() == RTTI_BUILDING && VeterancyRank == 3)
+            ){
+                healthreshhold = 0x0100;
+            }
             if (Health_Ratio() < healthreshhold){
                 Strength++;
                 Mark(MARK_CHANGE);
@@ -1991,8 +2019,8 @@ void TechnoClass::AI(void)
             
             
             // Chthon CFE Note: rank 3 veteran stealth tanks cloak after half the usual delay if there's nothing to shoot at right now, and cloak always works despite damage
-            // (23 since veterancy RoF bonus reduced rearm from 60 to 46, so half is now 23) 
-            if (bettercloak && Arm < 24 && CloakingDevice.Fetch_Stage() && (!Target_Legal(TarCom) || !In_Range(TarCom))){
+            // (23 since veterancy RoF bonus reduced rearm from 60 to 46, so half is now 23) // changed RoF bonus, so now post-RoF-bonus is 52, and half is 26
+            if (bettercloak && Arm < 27 && CloakingDevice.Fetch_Stage() && (!Target_Legal(TarCom) || !In_Range(TarCom))){
                 Do_Cloak();
             }
 			else if (!Arm && CloakingDevice.Fetch_Stage()) {
@@ -2353,7 +2381,7 @@ int TechnoClass::Rearm_Delay(bool second) const
 {
 	if (second) {
         //float localROFBias = 1.0 - (0.1 * VeterancyRank); // Chthon CFE Note: Since we lack room for another float, and this is the only place it's used, just compute here
-        float localROFBias = 1.0 / (1.0 + (0.1 * VeterancyRank)); // to multiply the *rate* of fire we need to multiply the *time per shot* by the inverse of the rate we want.
+        float localROFBias = 1.0 / (1.0 + (0.05 * VeterancyRank)); // to multiply the *rate* of fire we need to multiply the *time per shot* by the inverse of the rate we want.
         return(((int)Weapons[Techno_Type_Class()->Primary].ROF * localROFBias * House->ROFBias) + 3);
 	}
 	return(9);
@@ -5057,6 +5085,8 @@ void TechnoClass::AttackMoveEnterAttackMode(){
     Commence();
 }
 
+
+
 void TechnoClass::GainVeterancyXP(unsigned short int XP){
     // bail if veterancy disabled
     if (!ActiveCFEPatchConfig.EnableVeterancy){
@@ -5179,7 +5209,7 @@ void TechnoClass::GainVeterancyXP(unsigned short int XP){
     if (VeterancyRank != oldrank){
         int delta = VeterancyRank - oldrank;
         for (int i=0; i<delta; i++){
-            FirepowerBias += 0.1f;
+            FirepowerBias += 0.05f;
             ArmorBias -= 0.1f;
             // don't reduce damage by more than 90% (might matter in RA with crates and stuff)
             if (ArmorBias < 0.1f){
@@ -5191,16 +5221,23 @@ void TechnoClass::GainVeterancyXP(unsigned short int XP){
             // ROFBias is handled in TechnoClass::Rearm_Delay() using VeterancyRank
             // Regen beginning at rank 2 is handled in TechnoClass::AI()
         }
+        
         // play a sound for the owner only
-        if (PlayerPtr->Class->House == Owner()){
-            Sound_Effect(VOC_PROMOTED, Coord);
+        // let's try calling the API function directly so we can set the house pointer correctly
+        // also, the XML for the sound needs to indicate it should only play for one player -- IsUnitResponseVO works, and I'm guessing IsGUI and IsHUDVO would too.
+        // Need to filter out CPU houses or the PC acting as the server gets their sounds -- really bad for single player
+        if (House->IsHuman) {
+            On_Sound_Effect(House, (int)VOC_PROMOTED, "", 1, Coord);
         }
+        
         // flash for the owner only
-        Clicked_As_Target(Owner(), 18); // roughly matches the duration of the loud part of the SFX 
-        // show the pip immediately if selected
-        if (Is_Selected_By_Player()) {
+        Clicked_As_Target(Owner(), 18); // roughly matches the duration of the audible part of the SFX 
+        
+        // show the pip immediately if presently selected by its owner
+        if (Is_Selected_By_Player(House)) {
 			Mark(MARK_CHANGE);
 		}
+		
     }
     
     return;

@@ -2072,6 +2072,13 @@ void DLLExportClass::On_Display_Briefing_Text()
 }
 
 
+
+// Chthon CFE Note: We need a class-free wrapper so we can extern this
+void On_Sound_Effect(const HouseClass* player_ptr, int sound_effect_index, const char* extension, int variation, COORDINATE coord){
+    DLLExportClass::On_Sound_Effect(player_ptr, sound_effect_index, extension, variation, coord);
+}
+
+
 /**************************************************************************************************
 * DLLExportClass::On_Sound_Effect -- Called when C&C wants to play a sound effect
 *
@@ -3273,6 +3280,18 @@ void DLLExportClass::DLL_Draw_Intercept(int shape_number, int x, int y, int widt
 		memset(new_object.ActionWithSelected, DAT_NONE, sizeof(new_object.ActionWithSelected));
 	}
 
+	// Chthon CFE Note: Special fix to make sure veterancy pips only show for owner in multiplayer
+    if ((shape_file_name != NULL) && object && object->Is_Techno() && 
+        (   (strcmp(shape_file_name, "ZVTRN") == 0) ||
+            (strcmp(shape_file_name, "DOTSML") == 0) ||
+            (strcmp(shape_file_name, "DOTGDI") == 0) ||
+            (strcmp(shape_file_name, "DOTNOD") == 0)
+        )
+    ){
+        // seems like VisibleFlags uses the same type of mask as HouseClass.Allies -- left shift 1 by the house number
+        new_object.VisibleFlags = ((unsigned int)1 << (unsigned int)(((TechnoClass*)object)->House->Class->House)); 
+    }
+	
 	CurrentDrawCount++;
 }			  
 
@@ -6025,6 +6044,7 @@ void DLLExportClass::Cell_Class_Draw_It(CNCDynamicMapStruct *dynamic_map, int &e
 	*Special thanks to pchote for this, getting the cursor rendering in classic was easy
 	*getting it to render in glyphX has been difficult
 	*/
+    
 	if (cell_ptr->IsCursorHere && Map.PendingObject && CFE_Patch_Is_Wall(*Map.PendingObject) && Map.ZoneCell != cell_ptr->Cell_Number()) {
 		CNCDynamicMapEntryStruct& cursorEntry = dynamic_map->Entries[entry_index++];
 
@@ -6047,6 +6067,7 @@ void DLLExportClass::Cell_Class_Draw_It(CNCDynamicMapStruct *dynamic_map, int &e
 		cursorEntry.IsTheaterShape = false;
 		cursorEntry.IsFlag = false;
 	}
+	
 }
 
 

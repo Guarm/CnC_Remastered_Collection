@@ -114,6 +114,8 @@ enum SAMState {
 	SAM_LOWERING,				// Launcher is lowering into the ground.
 };
 
+// Chthon CFE Note -- added so we can draw rally point markers directly in remastered graphics mode
+extern void DLL_Draw_Intercept(int shape_number, int x, int y, int width, int height, int flags, ObjectClass *object, const char *shape_file_name, char override_owner, int scale);
 
 /***************************************************************************
 **	Center of building offset table.
@@ -801,12 +803,53 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window)
 		}
 	}
 
-	if (Can_Have_Rally_Point() && Is_Selected_By_Player() && Is_Owned_By_Player() && RallyPoint && Target_Legal(RallyPoint))
+	// Chthon CFE Note: fixed to work in LAN multiplayer
+	if (Can_Have_Rally_Point() && Is_Selected_By_Player(House) && RallyPoint && Target_Legal(RallyPoint))
 	{
 		int startX, startY, endX, endY;
 		Map.Coord_To_Pixel(Center_Coord(), startX, startY);
 		Map.Coord_To_Pixel(As_Coord(RallyPoint), endX, endY);
-		CC_Draw_Line(startX, startY, endX, endY, LTGREEN, 1, window);
+        // remastered renderer
+        if (window == WINDOW_VIRTUAL){
+            // compute spacing for dots
+            bool negativeX = (startX > endX);
+            bool negativeY = (startY > endY);
+            int Xdistance = endX - startX;
+            if (negativeX){
+                Xdistance *= -1;
+            }
+            int Ydistance = endY - startY;
+            if (negativeY){
+                Ydistance *= -1;
+            }
+            float diagonaldistance = sqrt( (float)((Xdistance * Xdistance)+(Ydistance * Ydistance)) );
+            int steps = (int)(diagonaldistance / 10.0); // spacing needs to be at least as big as the diagonal of the images used or they may overlap
+            float deltaX = (float)Xdistance / (float) steps;
+            float deltaY = (float)Ydistance / (float) steps;
+            // draw a series of small dots
+            for (int i=0; i<steps; i++){
+                int diffX = (int)((float)i * deltaX);
+                if (negativeX){
+                    diffX *= -1;
+                }
+                int diffY = (int)((float)i * deltaY);
+                if (negativeY){
+                    diffY *= -1;
+                }
+                DLL_Draw_Intercept(0, startX + diffX, startY + diffY, 4, 4, SHAPE_WIN_REL | SHAPE_CENTER, this, "DOTSML", HOUSE_NONE, 0x100);
+            }
+            // draw the big dot at the end
+            if ((Owner() == HOUSE_BAD ) || (House->ActLike == HOUSE_BAD)){
+                DLL_Draw_Intercept(0, endX, endY, 8, 8, SHAPE_WIN_REL | SHAPE_CENTER, this, "DOTNOD", HOUSE_NONE, 0x100);
+            }
+            else {
+                DLL_Draw_Intercept(0, endX, endY, 8, 8, SHAPE_WIN_REL | SHAPE_CENTER, this, "DOTGDI", HOUSE_NONE, 0x100);
+            }
+        }
+        // legacy renderer (keep the line since it will be easier to see than the dots at low res)
+        else{
+            CC_Draw_Line(startX, startY, endX, endY, LTGREEN, 1, window);
+        }
 	}
 
 	TechnoClass::Draw_It(x, y, window);
@@ -4621,7 +4664,8 @@ int BuildingClass::Mission_Attack(void)
 							if (error == FIRE_OK) {
 								Fire_At(TarCom, 0);
 								Status = SAM_LOCKING;
-                                float localROFBias = 1.0 / (1.0 + (0.1 * VeterancyRank)); // Chthon CFE Note: need to convert ROF multiplier into delay reduction
+                                float localROFBias = 1.0 / (1.0 + (0.05 * VeterancyRank)); // Chthon CFE Note: need to convert ROF multiplier into delay reduction
+                                int adjusteddelay;
                                 // Chthon CFE Note: Smarter SAM behavior inspired by screamingchicken
                                 if (ActiveCFEPatchConfig.EnableSmarterSAMs){
                                     SAMAmmo--;
@@ -4637,10 +4681,18 @@ int BuildingClass::Mission_Attack(void)
                                         // That leaves us back at SAM_READY (although arbitrary-shot is still probably at an advantage since it probably has less far to rotate to get on target than 2-shot which has to come from N)
                                         // But... waiting 8.5 sec between volleys feels reaaaaaaally slow.
                                         // So feel free to use something lower at the expense of changing game balance.
-                                        return ((TICKS_PER_SECOND*3) + ActiveCFEPatchConfig.SmarterSAMBalanceDelay) * localROFBias;
+                                        adjusteddelay = ((TICKS_PER_SECOND*3) + ActiveCFEPatchConfig.SmarterSAMBalanceDelay) * localROFBias;
+                                        if (adjusteddelay < 1){
+                                            adjusteddelay = 1;
+                                        }
+                                        return adjusteddelay;
                                     }
                                 }
-								return ((TICKS_PER_SECOND*3) * localROFBias);
+                                adjusteddelay = ((TICKS_PER_SECOND*3) * localROFBias);
+                                if (adjusteddelay < 1){
+                                    adjusteddelay = 1;
+                                }
+								return adjusteddelay;
 							}
 						}
 					}

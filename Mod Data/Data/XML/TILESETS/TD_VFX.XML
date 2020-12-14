@@ -6055,6 +6055,39 @@
 			</Tile>
 			<Tile>
 				<Key>
+					<Name>DOTGDI</Name>
+					<Shape>0</Shape>
+				</Key>
+				<Value>
+					<Frames>
+						<Frame>dotgdi\dotgdi-0000.tga</Frame>
+					</Frames>
+				</Value>
+			</Tile>
+			<Tile>
+				<Key>
+					<Name>DOTNOD</Name>
+					<Shape>0</Shape>
+				</Key>
+				<Value>
+					<Frames>
+						<Frame>dotnod\dotnod-0000.tga</Frame>
+					</Frames>
+				</Value>
+			</Tile>
+			<Tile>
+				<Key>
+					<Name>DOTSML</Name>
+					<Shape>0</Shape>
+				</Key>
+				<Value>
+					<Frames>
+						<Frame>dotsml\dotsml-0000.tga</Frame>
+					</Frames>
+				</Value>
+			</Tile>
+			<Tile>
+				<Key>
 					<Name>DRAGON</Name>
 					<Shape>0</Shape>
 				</Key>

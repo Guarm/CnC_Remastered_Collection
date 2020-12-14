@@ -425,7 +425,7 @@ void UnitClass::AI(void)
 				Ammo++;
 				if (Ammo < Class->MaxAmmo) {
                     // Chthon CFE Note: veteran SSM should reload faster too, or RoF bonus is kinda pointless, then rank 3 should get even faster reload
-                    float localROFBias = 1.0 / (1.0 + (0.1 * VeterancyRank)); // to multiply the *rate* of fire we need to multiply the *time per shot* by the inverse of the rate we want.
+                    float localROFBias = 1.0 / (1.0 + (0.05 * VeterancyRank)); // to multiply the *rate* of fire we need to multiply the *time per shot* by the inverse of the rate we want.
                     if (VeterancyRank == 3){
                         Reload = (TICKS_PER_SECOND*20)*localROFBias;
                     }
@@ -472,17 +472,18 @@ void UnitClass::AI(void)
 		Mark(MARK_CHANGE);
         // dealt with in TECHNO.CPP if vetrancy >=2
 	}
-	// Rank 3 veteran GDI APCs have an onboard medic to heal passengers (2 hp per 7 ticks)
-	else if ((*this == UNIT_APC) && (VeterancyRank == 3) && ((Owner() == HOUSE_GOOD ) || (House->ActLike == HOUSE_GOOD)) && ((Frame % 7) == 0)){
+	// Rank 3 veteran GDI APCs have an onboard medic to heal passengers // slowed down to 1 hp per 16 frames, which is still quite fast for infantry
+	else if ((*this == UNIT_APC) && (VeterancyRank == 3) && ((Owner() == HOUSE_GOOD ) || (House->ActLike == HOUSE_GOOD)) && ((Frame % 16) == 0)){
         ObjectClass const * object = Attached_Object();
 		for (int pindex = 0; pindex < Class_Of().Max_Pips(); pindex++) {
 			if (object) {
 				if (object->What_Am_I() == RTTI_INFANTRY) {
 					if (((InfantryClass *)object)->Health_Ratio() < 0x0100) {
-                        ((InfantryClass *)object)->Strength+=2;
-                        if (((InfantryClass *)object)->Strength > ((InfantryClass *)object)->Class->MaxStrength){
-                            ((InfantryClass *)object)->Strength = ((InfantryClass *)object)->Class->MaxStrength;
-                        }
+                        ((InfantryClass *)object)->Strength++;
+                        //((InfantryClass *)object)->Strength+=2;
+                        //if (((InfantryClass *)object)->Strength > ((InfantryClass *)object)->Class->MaxStrength){
+                        //    ((InfantryClass *)object)->Strength = ((InfantryClass *)object)->Class->MaxStrength;
+                        //}
                     }
 				}
 				object = object->Next;

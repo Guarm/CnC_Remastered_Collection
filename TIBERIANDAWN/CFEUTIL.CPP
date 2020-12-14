@@ -42,6 +42,19 @@ void Populate_CFE_Patch_Config_From_INI(const INIClass& ini)
 			target = value;
 	};
 
+    // Make sure target has enough room for length elements before you call this!
+    const auto GetString = [&ini](char target[], const char* section, const char* entry, const unsigned int length)
+	{
+		char* buffer = new char[length];
+        const int len = ini.Get_String(section, entry, "", &buffer[0], length) ;
+        buffer[length - 1] = 0;			// Make sure it's terminated
+		//CFE_Debug_Printf("getstring buffer is |%s|", buffer);
+        if (len > 0){
+            strncpy(target, buffer, length);
+            //target[length - 1] = 0;			// Make sure it's terminated
+        }
+        delete buffer;
+	};
 
 
 	//cfehunter 12/06/2020 It's really starting to get to the point where I should make feature flags
@@ -80,7 +93,12 @@ void Populate_CFE_Patch_Config_From_INI(const INIClass& ini)
     GetSetting(ActiveCFEPatchConfig.SmarterSAMAmmo   , "SETTINGS", "SMARTER_SAM_AMMO");
     GetSetting(ActiveCFEPatchConfig.SmarterSAMBalanceDelay   , "SETTINGS", "SMARTER_SAM_BALANCE_DELAY");
     
-
+    // Multiplayer
+    // This works if you use first 11 chars of SteamID for your name.
+    // BUT, it's useless since the server is doing EVERYTHING and the clients' DLLs appear totally dormant.
+    // So everyone ends up with whatever the server's INI file says.
+    //GetString(ActiveCFEPatchConfig.RealMPlayerName   , "MULTIPLAYER", "MPLAYERNAME", MPLAYER_NAME_MAX);
+    
 	//Clamp Wall Length between 1 (build at all) and 10 (buffer limits)
 	ActiveCFEPatchConfig.WallBuildLength = (std::max)(1, (std::min)(ActiveCFEPatchConfig.WallBuildLength, 10));
     
