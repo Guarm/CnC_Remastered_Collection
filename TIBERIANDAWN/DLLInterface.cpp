@@ -281,7 +281,10 @@ class DLLExportClass {
 
 		static bool Get_Game_Over()	{ return GameOver; }
 
-
+        // Chthon CFE Note: workaround for not being able to extern a static variable
+        // also need a wrapper outside the class
+        static BuildingTypeClass* GetPlacementType(unsigned int index) { return PlacementType[index]; }
+		
 	private:
 		static void Calculate_Single_Player_Score(EventCallbackStruct&);
 
@@ -375,7 +378,11 @@ bool ShareAllyVisibility = true;
 
 
 
-
+// Chthon CFE Note: workaround for not being able to extern a static variable
+// wrapper outside the class
+BuildingTypeClass* GetPlacementType(unsigned int index) {
+    return DLLExportClass::GetPlacementType(index);
+}
 
 
 void Play_Movie_GlyphX(const char * movie_name, ThemeType theme)
@@ -3285,7 +3292,8 @@ void DLLExportClass::DLL_Draw_Intercept(int shape_number, int x, int y, int widt
         (   (strcmp(shape_file_name, "ZVTRN") == 0) ||
             (strcmp(shape_file_name, "DOTSML") == 0) ||
             (strcmp(shape_file_name, "DOTGDI") == 0) ||
-            (strcmp(shape_file_name, "DOTNOD") == 0)
+            (strcmp(shape_file_name, "DOTNOD") == 0) ||
+            (strcmp(shape_file_name, "PLCEXT") == 0)
         )
     ){
         // seems like VisibleFlags uses the same type of mask as HouseClass.Allies -- left shift 1 by the house number
@@ -3556,6 +3564,7 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Input(InputRequestEnum 
 		case INPUT_REQUEST_MOUSE_MOVE:
 		{	
 			if (!DLLExportClass::Legacy_Render_Enabled()) {
+                // Chthon CFE Note: INPUT_REQUEST_MOUSE_MOVE is not even received in LAN multiplayer, so this is unreachable. We can't do anything here.
 				break;
 			}
 			
@@ -4473,7 +4482,15 @@ void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_
 		for (int x = 0; x < map_cell_width; x++) {
 			CELL cell = (CELL)map_cell_x + x + ((map_cell_y + y) << _map_width_shift_bits);
 			BuildingClass* base = (BuildingClass*)Map[cell].Cell_Find_Object(RTTI_BUILDING);
-			if ((base && base->House->Class->House == PlayerPtr->Class->House) || (Map[cell].Owner == PlayerPtr->Class->House)) {
+            // Chthon CFE Note: Fix potential crash bug by checking is base->IsActive before base->House->Class->House
+			if (     (base && base->IsActive && base->House->Class->House == PlayerPtr->Class->House) ||
+                      (     (Map[cell].Owner == PlayerPtr->Class->House) &&
+                            (       ActiveCFEPatchConfig.AllowSandbagging ||
+                                    (Map[cell].Overlay == OVERLAY_NONE) ||
+                                    !(OverlayTypeClass::As_Reference(Map[cell].Overlay).IsWall)
+                            )
+                      )    
+            ) {
 				placement_distance[cell] = 0U;
 				
 				/* 14/06/2020 cfehunter
@@ -4481,8 +4498,16 @@ void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_
 				** even the base game only flood fills adjacent tiles, so just set all the valid tiles to 0
 				*/
 				for (int adjY = y - buildingGap, adjMaxY = y + buildingGap; adjY <= adjMaxY; ++adjY) {
+                    // Chthon CFE Note: Let's avoid doing a left shift on a negative number (undefined!) or wrapping the map
+                    if ( (map_cell_y + adjY < 0) || (map_cell_y + adjY > MAP_MAX_CELL_HEIGHT) ){
+                        continue;
+                    }
 					for (int adjX = x - buildingGap, adjMaxX = x + buildingGap; adjX <= adjMaxX; ++adjX) {
-						//XY_CELL is incompatible with this because x/y do not take the map offset into account
+                        // Chthon CFE Note: Let's avoid wrapping the map
+                        if ( (map_cell_x + adjX < 0) || (map_cell_x + adjX > MAP_MAX_CELL_WIDTH) ){
+                            continue;
+                        }
+                        //XY_CELL is incompatible with this because x/y do not take the map offset into account
 						const CELL adjCell = map_cell_x + adjX + ((map_cell_y + adjY) << 6);
 						if (Map.In_Radar(adjCell))
 							placement_distance[adjCell] = 0U;
@@ -4610,7 +4635,27 @@ bool DLLExportClass::Passes_Proximity_Check(CELL cell_in, BuildingTypeClass *pla
 		proximityPass = proximityPass || placement_distance[center_cell] <= ActiveCFEPatchConfig.BuildingGap;
 	}
 
-	return proximityPass;
+	//return proximityPass;
+    // Chthon CFE Note -- make additional check for friendly wall out to max wall length for TS-style wall building
+	// return true if we already succeeded
+	if (proximityPass){
+        return true;
+    }
+    // stop here if this isn't a wall
+    if (!placement_type->IsWall){
+        return false;
+    }
+    // proceed with the check
+    const OverlayType wallOverlay = placement_type->Overlay_Type();
+    // Using PlayerPtr here only works in LAN multiplayer because this function is only ever called in the context of Get_Placement_State() and that starts with a call to Set_Player_Context() -- don't use this function elsewhere!
+    const HousesType myowner = PlayerPtr->Class->House;
+    for (FacingType dir : FacingCardinals){
+        const int scandist = Map.Scan_For_Overlay(cell_in, dir, wallOverlay, ActiveCFEPatchConfig.WallBuildLength, true, myowner);
+        if (scandist >= 0){
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -7388,6 +7433,10 @@ void DLLExportClass::Debug_Heal_Unit(int x, int y)
 }
 
 
+// Chthon CFE Note: We need a class-free wrapper so we can extern this
+bool Legacy_Render_Enabled(void){
+    return DLLExportClass::Legacy_Render_Enabled();
+}
 
 
 /**************************************************************************************************

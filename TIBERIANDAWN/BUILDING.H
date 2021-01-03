@@ -165,6 +165,7 @@ class BuildingClass : public TechnoClass
         // Chthon CFE Note: delay for smarter SAMs
         short int SAMLoweringDelay;
         unsigned char SAMAmmo;
+        unsigned char ShowInverseWallPreviewMarkers = 0;
 
 		TARGET Target_For_Rally_Point() const;
 
@@ -319,7 +320,8 @@ class BuildingClass : public TechnoClass
         // Chthon CFE Note: original padding was 32 bytes
         // Rally points eat 2 bytes
         // Smarter SAMS eat 3 bytes
-		unsigned char SaveLoadPadding[27];
+        // ShowInverseWallPreviewMarkers eats 1 byte
+		unsigned char SaveLoadPadding[26];
 
 		static COORDINATE const CenterOffset[BSIZE_COUNT];
 

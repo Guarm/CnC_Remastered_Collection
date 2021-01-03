@@ -4763,8 +4763,13 @@ void HouseClass::Sell_Wall(CELL cell)
 
 					//Disable wall refunds if the player has a wall build length > 1
 					//FluffyQuack 14/06/2020: Always allow refunds if walls have full cost 
-					if (!IsHuman || ActiveCFEPatchConfig.WallBuildLength <= 1 || ActiveCFEPatchConfig.WallsAlwaysHaveFullCost)
+					if (!IsHuman || ActiveCFEPatchConfig.WallBuildLength <= 1 || ActiveCFEPatchConfig.WallsAlwaysHaveFullCost){
 						Refund_Money(btype->Cost_Of() / 2);
+                    }
+                    // Chthon CFE Note -- it makes more sense for walls to refund at the minimum value that assumes you bought a full-length piece
+                    else{
+                        Refund_Money(btype->Cost_Of() / (2 * ActiveCFEPatchConfig.WallBuildLength));
+                    }
 
 					Map[cell].Overlay = OVERLAY_NONE;
 					Map[cell].OverlayData = 0;

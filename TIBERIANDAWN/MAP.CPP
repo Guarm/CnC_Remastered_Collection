@@ -1612,10 +1612,15 @@ CELL MapClass::Nearby_Location(CELL cell) const	//, SpeedType speed, int zone, M
  *                                                                                             *
  * HISTORY:                                                                                    *
  * 12/06/2020 cfehunter: created                                                               *
+ *  Chthon modifed to add option to search for only walls belonging to a given house
  *=============================================================================================*/
-int MapClass::Scan_For_Overlay(const CELL origin, const FacingType dir, const OverlayType overlay, const int maxLength) const
+int MapClass::Scan_For_Overlay(const CELL origin, const FacingType dir, const OverlayType overlay, const int maxLength, const bool limittohouse, const HousesType whichhouse) const
 {
-	if (In_Radar(origin))
+    if (limittohouse && whichhouse == HOUSE_NONE){
+        return -1;
+    }
+    
+    if (In_Radar(origin))
 	{
 		CELL current = origin;
 		for (int i = 0; i < maxLength; ++i)
@@ -1626,14 +1631,23 @@ int MapClass::Scan_For_Overlay(const CELL origin, const FacingType dir, const Ov
 				const CellClass& mapCell = Map[current];
 
 				//Found a match
-				if (mapCell.Overlay == overlay)
-					return i;
+				if (mapCell.Overlay == overlay){
+                    if (!limittohouse || (whichhouse == mapCell.Owner)){
+                        return i;
+                    }
+                    // we hit a wall, but it belongs to someone else
+                    else {
+                        break;
+                    }
+                }
 				//Blocked by an object
-				else if (!Map[current].Is_Generally_Clear())
+				else if (!Map[current].Is_Generally_Clear()){
 					break;
+                }
 			}
-			else
+			else {
 				break;
+            }
 		}
 	}
 
@@ -1804,6 +1818,7 @@ void MapClass::CFELogic(void){
                                 UnitClass * unit = new UnitClass(UNIT_VICE, HOUSE_JP);
                                 if (unit) {
                                     if (Scan_Place_Object(unit, cell)){
+                                        Sound_Effect(VOC_SQUISH2, unit->Coord); // make a squishy sound
                                         VisceroidTreeFrustrationCount = 0;
                                     }
                                     else {
@@ -1831,6 +1846,7 @@ bool MapClass::ProcessTiberiumDeath(CELL where, unsigned char how){
             UnitClass * unit = new UnitClass(UNIT_VICE, HOUSE_JP);
             if (unit) {
                 if (Scan_Place_Object(unit, where)){
+                    Sound_Effect(VOC_SQUISH2, unit->Coord); // make a squishy sound
                     Map.VisceroidOffalCount = 0;
                     return true;
                 }
@@ -1846,6 +1862,7 @@ bool MapClass::ProcessTiberiumDeath(CELL where, unsigned char how){
             UnitClass * unit = new UnitClass(UNIT_VICE, HOUSE_JP);
             if (unit) {
                 if (Scan_Place_Object(unit, where)){
+                    Sound_Effect(VOC_SQUISH2, unit->Coord); // make a squishy sound
                     return true;
                 }
                 else {

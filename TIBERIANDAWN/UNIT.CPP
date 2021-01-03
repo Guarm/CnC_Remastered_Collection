@@ -1026,6 +1026,7 @@ ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhea
 			// Chthon CFE Note: ANIM_CHEM_BALL makes more sense for visceroids than ordinary explosion. Use that.
 			if (ActiveCFEPatchConfig.MeanerVisceroids && *this == UNIT_VICE){
                 anim = ANIM_CHEM_BALL;
+                Sound_Effect(VOC_SQUISH2, Coord); // make a squishy sound
             }
 			
 			new AnimClass(anim, Coord);

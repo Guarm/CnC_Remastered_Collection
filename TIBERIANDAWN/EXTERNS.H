@@ -96,6 +96,7 @@ struct CFEPatchConfig
     bool TSVisceroidSpawn = false;
     bool MeanerVisceroids = false;
     bool EnableVeterancy = false;
+    bool AllowSandbagging = true;
 	int  InfantryTiberiumAversion = 0;
     int  BuildingGap = 2;
 	int  HarvyQueueJumpCutoff = 4;
@@ -109,6 +110,7 @@ struct CFEPatchConfig
     int  HarvyOptimizeCommunalismWeight = 29;
 	int  TibGrowthScale = 1;
 	int  WallBuildLength = 5;
+    int InverseBuildingPreviewMode = 0; // 0=off; 1= only walls, only in MP, 2 = only walls, 3 = all buildings
     int SmarterSAMAmmo = 2;
     int  SmarterSAMBalanceDelay = 0;
     

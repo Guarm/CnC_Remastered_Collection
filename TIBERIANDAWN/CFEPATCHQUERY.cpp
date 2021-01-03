@@ -51,18 +51,28 @@ bool CFE_Patch_Can_Have_Rally_Point(const ObjectClass& object)
 
 bool CFE_Patch_Should_Extend_Walls()
 {
-	//#CFE TODO: This isn't multiplayer safe
+	//#CFE TODO: This isn't multiplayer safe // Chthon CFE Note -- actually it is MP safe.
 	return ActiveCFEPatchConfig.WallBuildLength > 1 && !DLL_Export_Get_Input_Key_State(KN_LCTRL);
 }
 
 bool CFE_Patch_Is_Cell_Friendly_To_House(const HousesType house, const CELL cell)
 {
+    // Chthon CFE Note -- changed so building off walls is toggleable
 	if (Map[cell].Owner == house) {
-		return(true);
+        if (    ActiveCFEPatchConfig.AllowSandbagging || 
+                (Map[cell].Overlay == OVERLAY_NONE) ||
+                !(OverlayTypeClass::As_Reference(Map[cell].Overlay).IsWall)
+        ){
+            return(true);
+        }
+        else {
+            return false;
+        }
 	}
 
 	if (const BuildingClass* const base = Map[cell].Cell_Building()) {
-		if (base->House->Class->House == house) {
+        // Chthon CFE Note: check for active, potential crash bug if we don't
+		if (base->IsActive && base->House->Class->House == house) {
 			return true;
 		}
 	}
@@ -76,7 +86,15 @@ bool CFE_Patch_Is_Cell_In_Radius_To_Friendly_House(const HousesType house, const
 		const int cellX = Cell_X(cell);
 		const int cellY = Cell_Y(cell);
 		for (int y = cellY - radius, yEnd = cellY + radius; y <= yEnd; ++y) {
+            // Chthon CFE Note -- don't wrap the map or call XY_Cell on a negative number (left shift on negative number is undefined)
+            if ( (y < 0) || (y > MAP_CELL_H) ){
+                continue;
+            }
 			for (int x = cellX - radius, xEnd = cellX + radius; x <= xEnd; ++x) {
+                // Chthon CFE Note -- again, don't wrap the map
+                if ( (x < 0) || (x > MAP_CELL_W) ){
+                    continue;
+                }
 				const CELL nextCell = XY_Cell(x, y);
 
 				if (Map.In_Radar(nextCell) && CFE_Patch_Is_Cell_Friendly_To_House(house, nextCell))
@@ -124,7 +142,7 @@ int CFE_Patch_FullRange_Random_Pick(int min, int max){
     ceiling *= adjustedmax;
     int fullrangerandom = 0;
     do {
-        int random_one = rand() & 0x7fff; //weird, weird overload in RandomClass means this is actually a function call
+        int random_one = rand() & 0x7fff;
         int random_two = rand() & 0x7fff;
         fullrangerandom = (random_one << 16) | random_two;
         if (random_one > random_two){
@@ -135,7 +153,7 @@ int CFE_Patch_FullRange_Random_Pick(int min, int max){
 }
 
 
-/* // Unfortunately, this, works as intended (if you give it the first 11 characters of SteamID as your name) but doesn't solve the problem.
+/* // Unfortunately, this works as intended (if you give it the first 11 characters of SteamID as your name) but doesn't solve the problem.
  * // Turns out the server is doing ALL the display work for the clients.
  * // In fact, clients' DLLs are never called to do anything at all, and probably aren't even loaded.
  * // So all this accomplishes is identifying who the server is. Which is useless to what we wanted to do.

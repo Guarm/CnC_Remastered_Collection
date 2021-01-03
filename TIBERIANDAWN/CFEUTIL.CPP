@@ -90,6 +90,7 @@ void Populate_CFE_Patch_Config_From_INI(const INIClass& ini)
 	GetSetting(ActiveCFEPatchConfig.TibGrowthScale            , "SETTINGS", "TIB_GROWTH_SCALE");
 	GetSetting(ActiveCFEPatchConfig.WallBuildLength           , "SETTINGS", "WALL_BUILD_LENGTH");
 	GetSetting(ActiveCFEPatchConfig.WallsAlwaysHaveFullCost   , "SETTINGS", "WALLS_HAVE_FULL_COST");
+    GetSetting(ActiveCFEPatchConfig.InverseBuildingPreviewMode           , "SETTINGS", "INVERSE_PREVIEW_MODE");
     GetSetting(ActiveCFEPatchConfig.SmarterSAMAmmo   , "SETTINGS", "SMARTER_SAM_AMMO");
     GetSetting(ActiveCFEPatchConfig.SmarterSAMBalanceDelay   , "SETTINGS", "SMARTER_SAM_BALANCE_DELAY");
     
@@ -101,6 +102,9 @@ void Populate_CFE_Patch_Config_From_INI(const INIClass& ini)
     
 	//Clamp Wall Length between 1 (build at all) and 10 (buffer limits)
 	ActiveCFEPatchConfig.WallBuildLength = (std::max)(1, (std::min)(ActiveCFEPatchConfig.WallBuildLength, 10));
+    
+    // Clamp inverse preview mode to legal values (0-3)
+    ActiveCFEPatchConfig.InverseBuildingPreviewMode = (std::max)(0, (std::min)(ActiveCFEPatchConfig.InverseBuildingPreviewMode, 3));
     
     // If A-Star isn't enabled, distance constants will be compared against leptons rather than cells, so convert here
     if (!ActiveCFEPatchConfig.EnableASPathing){
@@ -135,6 +139,14 @@ void Populate_CFE_Patch_Config_From_INI(const INIClass& ini)
     // Compute complex weights here so they only have to be computed once
     ActiveCFEPatchConfig.HarvyOptimizeThrashingWeight = (ActiveCFEPatchConfig.HarvyOptimizeUnloadWaitWeight * ActiveCFEPatchConfig.HarvyOptimizeThrashingNumerator) / ActiveCFEPatchConfig.HarvyOptimizeThrashingDenominator;
     ActiveCFEPatchConfig.HarvyOptimizeCommunalismWeight = (ActiveCFEPatchConfig.HarvyOptimizeUnloadWaitWeight * ActiveCFEPatchConfig.HarvyOptimizeCommunalismNumerator) / ActiveCFEPatchConfig.HarvyOptimizeCommunalismDenominator;
+    
+    // Only allow building off walls if wall build distance isn't longer than building gap
+    if (ActiveCFEPatchConfig.WallBuildLength > ActiveCFEPatchConfig.BuildingGap){
+        ActiveCFEPatchConfig.AllowSandbagging = false;
+    }
+    else {
+        ActiveCFEPatchConfig.AllowSandbagging = true;
+    }
 }
 
 bool Create_CFE_Patch_Directory(const char* path)

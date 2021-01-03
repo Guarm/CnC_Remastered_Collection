@@ -107,8 +107,10 @@ class MapClass: public GScreenClass
 		CELL Nearby_Location(CELL cell) const;	//, SpeedType speed, int zone, MZoneType check) const
 #endif //USE_RA_AI
 
-		int Scan_For_Overlay(const CELL origin, const FacingType dir, const OverlayType overlay, const int maxLength) const;
-
+        // Chthon CFE Note -- changed this to enable searching for only walls that belong to a given house
+		//int Scan_For_Overlay(const CELL origin, const FacingType dir, const OverlayType overlay, const int maxLength) const;
+        int Scan_For_Overlay(const CELL origin, const FacingType dir, const OverlayType overlay, const int maxLength, const bool limittohouse = false, const HousesType whichhouse = HOUSE_NONE) const;
+        
 		/*
 		**	This is the dimensions and position of the sub section of the global map.
 		**	It is this region that appears on the radar map and constrains normal

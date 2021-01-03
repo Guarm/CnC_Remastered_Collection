@@ -77,6 +77,10 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include	"function.h"
 
+// Chthon CFE Note -- externs for inverse building preview
+extern bool Legacy_Render_Enabled(void);
+extern BuildingTypeClass* GetPlacementType(unsigned int index);
+
 /*
 **	These layer control elements are used to group the displayable objects
 **	so that proper overlap can be obtained.
@@ -137,7 +141,6 @@ extern MixFileClass *TheaterIcons;
 //Added for getting the input for special character keys from the client 
 // - 6/26/2019 JAS 
 extern bool DLL_Export_Get_Input_Key_State(KeyNumType key);
-
 
 /***********************************************************************************************
  * DisplayClass::DisplayClass -- Default constructor for display class.                        *
@@ -909,7 +912,25 @@ bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, Houses
 
 		proximityPass = proximityPass || CFE_Patch_Is_Cell_In_Radius_To_Friendly_House(house, cell, ActiveCFEPatchConfig.BuildingGap);
 	}
-	return proximityPass;
+	//return proximityPass;
+	// Chthon CFE Note -- make additional check for friendly wall out to max wall length for TS-style wall building
+	// return true if we already succeeded
+	if (proximityPass){
+        return true;
+    }
+    // stop here if this isn't a wall (or house_none)
+    if (    !((BuildingTypeClass*)object)->IsWall || (house == HOUSE_NONE) ){
+        return false;
+    }
+    // proceed with the check
+    const OverlayType wallOverlay = ((BuildingTypeClass*)object)->Overlay_Type();
+    for (FacingType dir : FacingCardinals){
+        const int scandist = Map.Scan_For_Overlay(trycell, dir, wallOverlay, ActiveCFEPatchConfig.WallBuildLength, true, house);
+        if (scandist >= 0){
+            return true;
+        }
+    }
+    return false;
 }
 
 #endif //USE_RA_AI
@@ -3545,7 +3566,7 @@ void DisplayClass::Mouse_Left_Up(bool shadow, ObjectClass * object, ActionType a
         }
         //ANIM_ART_EXP1
     }
-    */
+    */    
     
     IsTentative = false;
 
@@ -4437,7 +4458,12 @@ ActionType Best_Object_Action(CELL cell)
  *=============================================================================================*/
 void DisplayClass::Update_Placement_Cursor()
 {
-	const BuildingTypeClass* const placement_building = PendingObject && PendingObject->What_Am_I() == RTTI_BUILDINGTYPE ? static_cast<const BuildingTypeClass*>(PendingObject) : nullptr;
+	// Original TS-style preview
+    // Doesn't work in LAN multiplayer
+    // Absolutely unfixable because clients only send mouse position updates to the server upon click or hotkey
+    // So, while it's possible to draw a preview using the method in the inverted preview (direct calls to DLL_Draw_Intercept()),
+    // it's NOT possible to know WHERE to display it at any given moment.
+    const BuildingTypeClass* const placement_building = PendingObject && PendingObject->What_Am_I() == RTTI_BUILDINGTYPE ? static_cast<const BuildingTypeClass*>(PendingObject) : nullptr;
 	if (placement_building && placement_building->IsWall)
 	{
 		if (CFE_Patch_Should_Extend_Walls() && In_Radar(ZoneCell))
@@ -4471,5 +4497,72 @@ void DisplayClass::Update_Placement_Cursor()
 			Set_Cursor_Shape(placement_building->Occupy_List(true));
 		}
 	}
+	
+	// Inverted preview cursor (works in all game modes)
+	// Marks the player's construction yard to redraw and sets a flag to make it draw the inverted placement preview when it does. 
+	// ActiveCFEPatchConfig.InverseBuildingPreviewMode: 0=off; 1= only walls, only in MP, 2 = only walls, 3 = all buildings
+	const bool singleplayer = Legacy_Render_Enabled();
+	if (ActiveCFEPatchConfig.InverseBuildingPreviewMode > 1 || ((ActiveCFEPatchConfig.InverseBuildingPreviewMode == 1) && !singleplayer) ){
+        
+        int rounds = 1;
+        if (!singleplayer){
+            rounds = MPlayerCount;
+        }
+	
+        for (int r=0; r<rounds; r++){
+            ObjectTypeClass const * pendingobject = nullptr;
+            HousesType myhousenumber = HOUSE_NONE;
+            if (singleplayer){
+                pendingobject = Map.PendingObject;
+                myhousenumber = PlayerPtr->Class->House;
+            }
+            else {
+                pendingobject = GetPlacementType((unsigned int)r);
+                myhousenumber = MPlayerHouses[r];
+            }
+            
+            
+            if(!HouseClass::As_Pointer(myhousenumber)->IsHuman){
+                continue;
+            }
+            
+            // So...
+            // Tried doing the cell markers as 1-frame animations. That worked but it was too slow if there were too many of them.
+            // Tried doing the cell markers as calls to DLL_Draw_Intercept() all using a single animation as the base object.
+            // That didn't work; apparently GlyphX cares about the object types we give it, and not all types can have arbitrary extra shapes drawn
+            // Now we're going to try finding the Construction Yard for the player building the wall and use *that* as the base object for a bunch of calls to DLL_Draw_Intercept()
+            // Which, painfully, means moving all this code into BuildingClass::Draw_It()...
+            
+            // find this player's con yard (if they've got one)
+            bool foundyard = false;
+            for (int i = 0; i < Buildings.Count(); i++) {
+                BuildingClass* somebuilding = Buildings.Ptr(i);
+                if (    somebuilding &&
+                        somebuilding->IsActive &&
+                        !somebuilding->IsInLimbo &&
+                        (somebuilding->Owner() == myhousenumber) &&
+                        (*somebuilding == STRUCT_CONST) 
+                ){
+                    // if they have a pending wall right now, show the markers
+                    if (pendingobject && !foundyard && ((ActiveCFEPatchConfig.InverseBuildingPreviewMode == 3) || CFE_Patch_Is_Wall(*pendingobject))){
+                        somebuilding->ShowInverseWallPreviewMarkers = 2;
+                        // force Construction Yard to redraw every tick while wall placement is pending
+                        somebuilding->Mark(MARK_CHANGE);
+                        foundyard = true; //only tag the first con yard found, then clear tags from any others
+                    }
+                    // if the wall placement just ended, mark it to redraw one more time to clear the markers
+                    // ditto if we already tagged a different con yard to draw
+                    else if (somebuilding->ShowInverseWallPreviewMarkers){
+                        somebuilding->ShowInverseWallPreviewMarkers = 0;
+                        somebuilding->Mark(MARK_CHANGE);
+                    }
 
+                }
+                
+            }
+                        
+        }
+    }
+	
+	
 }
