@@ -5103,7 +5103,7 @@ void TechnoClass::GainVeterancyXP(unsigned short int XP){
     
     // rank up to 3
     //if (VeterancyRank < 3 && VeterancyXP >= Class_Of().Cost_Of()){ // just for now jump straight to rank 3 for testing
-    if (VeterancyRank < 3 && VeterancyXP >= 5 * Class_Of().Cost_Of()){
+    if (VeterancyRank < 3 && VeterancyXP >= 6 * Class_Of().Cost_Of()){
         VeterancyRank = 3;
         
         // special bonuses for reaching rank 3:
