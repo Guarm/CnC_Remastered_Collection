@@ -87,12 +87,12 @@ bool CFE_Patch_Is_Cell_In_Radius_To_Friendly_House(const HousesType house, const
 		const int cellY = Cell_Y(cell);
 		for (int y = cellY - radius, yEnd = cellY + radius; y <= yEnd; ++y) {
             // Chthon CFE Note -- don't wrap the map or call XY_Cell on a negative number (left shift on negative number is undefined)
-            if ( (y < 0) || (y > MAP_CELL_H) ){
+            if ( (y < 0) || (y >= MAP_CELL_H) ){
                 continue;
             }
 			for (int x = cellX - radius, xEnd = cellX + radius; x <= xEnd; ++x) {
                 // Chthon CFE Note -- again, don't wrap the map
-                if ( (x < 0) || (x > MAP_CELL_W) ){
+                if ( (x < 0) || (x >= MAP_CELL_W) ){
                     continue;
                 }
 				const CELL nextCell = XY_Cell(x, y);

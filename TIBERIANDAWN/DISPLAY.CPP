@@ -77,6 +77,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include	"function.h"
 
+//#include "CFEDEBUG.H"
+
 // Chthon CFE Note -- externs for inverse building preview
 extern bool Legacy_Render_Enabled(void);
 extern BuildingTypeClass* GetPlacementType(unsigned int index);
@@ -4500,9 +4502,11 @@ void DisplayClass::Update_Placement_Cursor()
 	
 	// Inverted preview cursor (works in all game modes)
 	// Marks the player's construction yard to redraw and sets a flag to make it draw the inverted placement preview when it does. 
-	// ActiveCFEPatchConfig.InverseBuildingPreviewMode: 0=off; 1= only walls, only in MP, 2 = only walls, 3 = all buildings
+	// ActiveCFEPatchConfig.InverseBuildingPreviewMode: 0=off; 1= only in MP, 2 = always
 	const bool singleplayer = Legacy_Render_Enabled();
-	if (ActiveCFEPatchConfig.InverseBuildingPreviewMode > 1 || ((ActiveCFEPatchConfig.InverseBuildingPreviewMode == 1) && !singleplayer) ){
+	if (   ActiveCFEPatchConfig.InverseBuildingPreviewMode == 2 || 
+            (!singleplayer && (ActiveCFEPatchConfig.InverseBuildingPreviewMode == 1))
+    ){
         
         int rounds = 1;
         if (!singleplayer){
@@ -4520,46 +4524,48 @@ void DisplayClass::Update_Placement_Cursor()
                 pendingobject = GetPlacementType((unsigned int)r);
                 myhousenumber = MPlayerHouses[r];
             }
-            
-            
-            if(!HouseClass::As_Pointer(myhousenumber)->IsHuman){
-                continue;
-            }
-            
+        
             // So...
             // Tried doing the cell markers as 1-frame animations. That worked but it was too slow if there were too many of them.
             // Tried doing the cell markers as calls to DLL_Draw_Intercept() all using a single animation as the base object.
             // That didn't work; apparently GlyphX cares about the object types we give it, and not all types can have arbitrary extra shapes drawn
             // Now we're going to try finding the Construction Yard for the player building the wall and use *that* as the base object for a bunch of calls to DLL_Draw_Intercept()
             // Which, painfully, means moving all this code into BuildingClass::Draw_It()...
+            // That works, but it turns out drawing too many shapes every frame can crash the GlyphX client, so let's try this again with fewer shapes...
             
-            // find this player's con yard (if they've got one)
-            bool foundyard = false;
-            for (int i = 0; i < Buildings.Count(); i++) {
-                BuildingClass* somebuilding = Buildings.Ptr(i);
-                if (    somebuilding &&
-                        somebuilding->IsActive &&
-                        !somebuilding->IsInLimbo &&
-                        (somebuilding->Owner() == myhousenumber) &&
-                        (*somebuilding == STRUCT_CONST) 
-                ){
-                    // if they have a pending wall right now, show the markers
-                    if (pendingobject && !foundyard && ((ActiveCFEPatchConfig.InverseBuildingPreviewMode == 3) || CFE_Patch_Is_Wall(*pendingobject))){
-                        somebuilding->ShowInverseWallPreviewMarkers = 2;
-                        // force Construction Yard to redraw every tick while wall placement is pending
-                        somebuilding->Mark(MARK_CHANGE);
-                        foundyard = true; //only tag the first con yard found, then clear tags from any others
-                    }
-                    // if the wall placement just ended, mark it to redraw one more time to clear the markers
-                    // ditto if we already tagged a different con yard to draw
-                    else if (somebuilding->ShowInverseWallPreviewMarkers){
-                        somebuilding->ShowInverseWallPreviewMarkers = 0;
-                        somebuilding->Mark(MARK_CHANGE);
-                    }
+            if (    (myhousenumber != HOUSE_NONE) && 
+                    HouseClass::As_Pointer(myhousenumber)->IsHuman &&
+                    pendingobject &&
+                    CFE_Patch_Is_Wall(*pendingobject)
+            ){
+                // find this player's con yard (if they've got one)
+                bool foundyard = false;
+                for (int i = 0; i < Buildings.Count(); i++) {
+                    BuildingClass* somebuilding = Buildings.Ptr(i);
+                    if (    somebuilding &&
+                            somebuilding->IsActive &&
+                            !somebuilding->IsInLimbo &&
+                            (somebuilding->Owner() == myhousenumber) &&
+                            (*somebuilding == STRUCT_CONST) 
+                    ){
+                        // if they have a pending wall right now, show the markers
+                        if (!foundyard){
+                            somebuilding->ShowInverseWallPreviewMarkers = 2;
+                            somebuilding->Mark(MARK_CHANGE); // force Construction Yard to redraw every tick while wall placement is pending
+                            foundyard = true; //only tag the first con yard found, then clear tags from any others
+                        }
+                        // if the wall placement just ended, mark it to redraw one more time to clear the markers
+                        // ditto if we already tagged a different con yard to draw this frame
+                        else if (somebuilding->ShowInverseWallPreviewMarkers){
+                            somebuilding->ShowInverseWallPreviewMarkers = 0;
+                            somebuilding->Mark(MARK_CHANGE);
+                        }
 
+                    }
+                    
                 }
-                
             }
+
                         
         }
     }

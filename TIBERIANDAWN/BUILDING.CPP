@@ -101,6 +101,8 @@
 */
 #include "SidebarGlyphx.h"
 
+//#include "CFEDEBUG.H"
+
 
 enum SAMState {
 	SAM_NONE=-1,					// Used for non SAM site buildings.
@@ -856,7 +858,9 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window)
 	}
 
 	// Chthon CFE Note: Use the Construction Yard as the base object for drawing the inverse wall placement markers
-	if (ShowInverseWallPreviewMarkers == 2){
+	// reworked because asking it to draw too many shapes could crash the GlyphX client
+	// only draw in remasted mode, since LAN multiplayer is the only mode normal TS-style markers don't work, and legacy render is disabled there
+	if ((ShowInverseWallPreviewMarkers == 2) && (window == WINDOW_VIRTUAL)){
         const HousesType myhousenumber = Owner();
         const bool singleplayer = Legacy_Render_Enabled();
         ObjectTypeClass const * pendingobject = nullptr;
@@ -871,132 +875,141 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window)
                 }
             }
         }
-        if (pendingobject && ((ActiveCFEPatchConfig.InverseBuildingPreviewMode == 3) || CFE_Patch_Is_Wall(*pendingobject))){
-            /* bitmask for these chars:
-            * 00000001 - 0x01 - North
-            * 00000010 - 0x02 - East
-            * 00000100 - 0x04 - South
-            * 00001000 - 0x08 - West
-            * 00010000 - 0x10 - buildable
-            */
+        if (pendingobject && CFE_Patch_Is_Wall(*pendingobject)){
+            const OverlayType mywallOverlay = ((BuildingTypeClass*)(pendingobject))->Overlay_Type();
             static unsigned char iconlist[MAP_CELL_TOTAL]; //static since it's probably faster to memset 4k of memory than reallocate it every time
             memset(iconlist, 0, MAP_CELL_TOTAL*sizeof(unsigned char));
             
             const int buildingGap = ActiveCFEPatchConfig.BuildingGap;
             const int walllength = ActiveCFEPatchConfig.WallBuildLength;
             
-            // first scan the whole map for cells that are buildable because they're within building gap
-            // (ripped off from Calculate_Placement_Distances)
+            bool foundunfriendlywall = false;
+            
+            // loop through all cells looking for friendly walls & builable cells
             for (int i =0; i<MAP_CELL_TOTAL; i++){
                 CELL basecell = i;
                 // don't bother if the cell's not on the playable section of the map
                 if (!Map.In_Radar(basecell)) {
                     continue; 
                 }
-                // skip cells we've already marked (since we only mark clear cells, we know they don't contain something we could build from)
-                if (iconlist[basecell] & 0x10){
-                    continue;
-                }
-                BuildingClass* abuilding = (BuildingClass*)Map[basecell].Cell_Find_Object(RTTI_BUILDING);
-                if (    (abuilding && abuilding->IsActive && abuilding->Owner() == myhousenumber) ||
-                        (     (Map[basecell].Owner == myhousenumber) &&
-                                (       ActiveCFEPatchConfig.AllowSandbagging ||
-                                        (Map[basecell].Overlay == OVERLAY_NONE) ||
-                                        !(OverlayTypeClass::As_Reference(Map[basecell].Overlay).IsWall)
-                                )
-                        )    
-                ) {
-                    // mark the cell as buildable if it's clear
-                    if (Map[basecell].Is_Generally_Clear()){
-                        iconlist[basecell] |= 0x10;
-                    }
-                    // mark everything within the building gap range as buildable if it's clear
-                    for (int adjY = Cell_Y(basecell) - buildingGap, adjMaxY = Cell_Y(basecell) + buildingGap; adjY <= adjMaxY; adjY++) {
-                        // don't wrap the map or try to left-shift a negative number
-                        if ((adjY < 0) || (adjY > MAP_CELL_H)){
-                            continue;
+
+                // apply markers to walls we own
+                if (Map[basecell].Overlay == mywallOverlay){
+                    if (Map[basecell].Owner == myhousenumber){
+                        int buildabledistances[4] = {0,0,0,0};
+                        int cardinalindex = 0;
+                        // scan out in each direction for buildable cells
+                        for (FacingType dir : FacingCardinals){ //FACING_N, FACING_E, FACING_S, FACING_W
+                            CELL nextcell = basecell;
+                            for (int j = 0; j <walllength; j++){
+                                nextcell = Adjacent_Cell(nextcell, dir);
+                                // stop scanning in this direction if we've gone off the map
+                                if (!Map.In_Radar(nextcell)){
+                                    break;
+                                }
+                                // check if cell is clear
+                                if (Map[nextcell].Is_Generally_Clear()){
+                                    // increment the buildable distance for this direction
+                                    buildabledistances[cardinalindex]++;
+                                    // mark the cell as buildable
+                                    iconlist[nextcell] = 1;
+                                }
+                                // stop scanning in this direction if we hit an obstruction
+                                else {
+                                    break;
+                                }
+                            }
+                            cardinalindex++;
                         }
-                        for (int adjX = Cell_X(basecell) - buildingGap, adjMaxX = Cell_X(basecell) + buildingGap; adjX <= adjMaxX; adjX++) {
-                            // don't wrap the map
-                            if ((adjX < 0) || (adjX > MAP_CELL_W)){
+                        // draw markers
+                        COORDINATE icoord = Cell_Coord(i);
+                        int basewallx;
+                        int basewally;
+                        Map.Coord_To_Pixel(icoord, basewallx, basewally);
+                        // do we need to draw a north/south marker?
+                        if (buildabledistances[0] || buildabledistances[2]){
+                            int adjustedy = basewally;
+                            int longaxis = buildabledistances[0] + buildabledistances[2]; // 1 short since only extends halfway into endpoint cells
+                            // move the center point north
+                            if (buildabledistances[0] > buildabledistances[2]){
+                                adjustedy = adjustedy - (12 * (buildabledistances[0] - buildabledistances[2]));
+                            }
+                            // move the center point south
+                            else {
+                                adjustedy = adjustedy + (12 * (buildabledistances[2] - buildabledistances[0]));
+                            }
+                            DLL_Draw_Intercept(longaxis - 1, basewallx, adjustedy, 24, 24*longaxis, SHAPE_WIN_REL | SHAPE_CENTER, this, "ZWALLV", HOUSE_NONE, 0x100);
+                        }
+                        // do we need to draw an east/west marker?
+                        if (buildabledistances[1] || buildabledistances[3]){
+                            int adjustedx = basewallx;
+                            int longaxis = buildabledistances[1] + buildabledistances[3]; // 1 short since only extends halfway into endpoint cells
+                            // move the center point east
+                            if (buildabledistances[1] > buildabledistances[3]){
+                                adjustedx = adjustedx + (12 * (buildabledistances[1] - buildabledistances[3]));
+                            }
+                            // move the center point west
+                            else {
+                                adjustedx = adjustedx - (12 * (buildabledistances[3] - buildabledistances[1]));
+                            }
+                            DLL_Draw_Intercept(longaxis - 1, adjustedx, basewally, 24*longaxis, 24, SHAPE_WIN_REL | SHAPE_CENTER, this, "ZWALLH", HOUSE_NONE, 0x100);
+                        }
+                    }
+                    else {
+                        foundunfriendlywall = true;
+                    }
+                }
+                // if this cell wasn't a wall, check if it's buildable anyway
+                else{
+                    BuildingClass* abuilding = (BuildingClass*)Map[basecell].Cell_Find_Object(RTTI_BUILDING);
+                    if (    (abuilding && abuilding->IsActive && abuilding->Owner() == myhousenumber) ||
+                            (     (Map[basecell].Owner == myhousenumber) &&
+                                    (       ActiveCFEPatchConfig.AllowSandbagging ||
+                                            (Map[basecell].Overlay == OVERLAY_NONE) ||
+                                            !(OverlayTypeClass::As_Reference(Map[basecell].Overlay).IsWall)
+                                    )
+                            )    
+                    ) {
+                        // mark the cell as buildable if it's clear
+                        if (Map[basecell].Is_Generally_Clear()){
+                            iconlist[basecell] = 1;
+                        }
+                        // mark everything within the building gap range as buildable if it's clear
+                        for (int adjY = Cell_Y(basecell) - buildingGap, adjMaxY = Cell_Y(basecell) + buildingGap; adjY <= adjMaxY; adjY++) {
+                            // don't wrap the map or try to left-shift a negative number
+                            if ((adjY < 0) || (adjY >= MAP_CELL_H)){
                                 continue;
                             }
-                            const CELL adjCell = XY_Cell(adjX, adjY);
-                            if (Map.In_Radar(adjCell) && Map[adjCell].Is_Generally_Clear()){
-                                iconlist[adjCell] |= 0x10;
+                            for (int adjX = Cell_X(basecell) - buildingGap, adjMaxX = Cell_X(basecell) + buildingGap; adjX <= adjMaxX; adjX++) {
+                                // don't wrap the map
+                                if ((adjX < 0) || (adjX >= MAP_CELL_W)){
+                                    continue;
+                                }
+                                const CELL adjCell = XY_Cell(adjX, adjY);
+                                if (Map.In_Radar(adjCell) && Map[adjCell].Is_Generally_Clear()){
+                                    iconlist[adjCell] = 1;
+                                }
                             }
                         }
                     }
                 }
-            }
-            
-            // skip the wall related scans if the placement object isn't a wall
-            if (CFE_Patch_Is_Wall(*pendingobject)){
-            
-                const OverlayType mywallOverlay = ((BuildingTypeClass*)(pendingobject))->Overlay_Type();
-                
-                // now scan the whole map for cells that are near walls that we own of the matching type
+            } // end big for loop
+
+            // now we may need to scan again for walls we DON'T own that are in range of buildable cells
+            if (foundunfriendlywall){
                 for (int i =0; i<MAP_CELL_TOTAL; i++){
                     CELL basecell = i;
                     // don't bother if the cell's not on the playable section of the map
                     if (!Map.In_Radar(basecell)) {
                         continue; 
                     }
-                    if ( (Map[basecell].Overlay == mywallOverlay) && (Map[basecell].Owner == myhousenumber)){
-                        // scan out in each direct from the wall piece
-                        for (FacingType dir : FacingCardinals){
-                                CELL nextcell = basecell;
-                                for (int j = 0; j <walllength; j++){
-                                    nextcell = Adjacent_Cell(nextcell, dir);
-                                    // stop scanning in this direction if we've gone off the map
-                                    if (!Map.In_Radar(nextcell)){
-                                        break;
-                                    }
-                                    // check if cell is clear
-                                    if (Map[nextcell].Is_Generally_Clear()){
-                                        // mark the cell as buildable
-                                        iconlist[nextcell] |= 0x10;
-                                        // mark the cell with the opposite direction of the scan (e.g., if we're scanning north FROM a wall, the cell's icon should point south TO the wall)
-                                        switch (dir){
-                                            case FACING_N:
-                                                iconlist[nextcell] |= 0x04; //south
-                                                break;
-                                            case FACING_E:
-                                                iconlist[nextcell] |= 0x08; //west
-                                                break;
-                                            case FACING_S:
-                                                iconlist[nextcell] |= 0x01; //north
-                                                break;
-                                            case FACING_W:
-                                                iconlist[nextcell] |= 0x02; //east
-                                                break;
-                                            default:
-                                                break;
-                                        }
-                                    }
-                                    // stop scanning in this direction since we hit an obstruction
-                                else {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }            
-            
-            
-                // now scan the whole map for cells that are near walls that we DON'T own of the matching type
-                for (int i =0; i<MAP_CELL_TOTAL; i++){
-                    CELL basecell = i;
-                    // don't bother if the cell's not on the playable section of the map
-                        if (!Map.In_Radar(basecell)) {
-                        continue; 
-                    }
                     if ( (Map[basecell].Overlay == mywallOverlay) && (Map[basecell].Owner != myhousenumber)){
+                        int buildabledistances[4] = {0,0,0,0};
+                        int cardinalindex = 0;
                         // scan out in each direct from the wall piece
                         for (FacingType dir : FacingCardinals){
                             CELL nextcell = basecell;
                             bool foundbuildable = false;
-                            int foundat = 0;
                             // go out up to max range and see if we hit a cell previously marked as buildable
                             for (int j = 0; j <walllength; j++){
                                 nextcell = Adjacent_Cell(nextcell, dir);
@@ -1004,66 +1017,63 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window)
                                 if (!Map.In_Radar(nextcell)){
                                     break;
                                 }
-                                // stop if we hit an onstacle
+                                // stop if we hit an obstacle
                                 if (!Map[nextcell].Is_Generally_Clear()){
                                     break;
                                 }
+                                // increment the buildable distance for this direction (even if we haven't confirmed it's buildable yet)
+                                buildabledistances[cardinalindex]++;
                                 // note if we found a cell previously marked as buildable
                                 // keep going in case further cells are also buildable
-                                if (iconlist[nextcell] & 0x10){
+                                if (iconlist[nextcell]){
                                     foundbuildable = true;
-                                    foundat = j;
                                 }
                             }
-                            // if we found a cell previously marked as buildable, mark stuff out to that distance with the opposite direction of the scan
-                            if (foundbuildable){
-                                nextcell = basecell;
-                                for (int j = 0; j <= foundat; j++){
-                                    nextcell = Adjacent_Cell(nextcell, dir);
-                                    switch (dir){
-                                        case FACING_N:
-                                            iconlist[nextcell] |= 0x04; //south
-                                            break;
-                                        case FACING_E:
-                                            iconlist[nextcell] |= 0x08; //west
-                                            break;
-                                        case FACING_S:
-                                            iconlist[nextcell] |= 0x01; //north
-                                            break;
-                                        case FACING_W:
-                                            iconlist[nextcell] |= 0x02; //east
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    
-                                }
+                            // if we never found a cell previously marked as buildable, reset the distance to 0
+                            if (!foundbuildable){
+                                buildabledistances[cardinalindex] = 0;
                             }
+                            cardinalindex++;
                         }
+                        // draw markers
+                        COORDINATE icoord = Cell_Coord(i);
+                        int basewallx;
+                        int basewally;
+                        Map.Coord_To_Pixel(icoord, basewallx, basewally);
+                        // do we need to draw a north/south marker?
+                        if (buildabledistances[0] || buildabledistances[2]){
+                            int adjustedy = basewally;
+                            int longaxis = buildabledistances[0] + buildabledistances[2]; // 1 short since only extends halfway into endpoint cells
+                            // move the center point north
+                            if (buildabledistances[0] > buildabledistances[2]){
+                                adjustedy = adjustedy - (12 * (buildabledistances[0] - buildabledistances[2]));
+                            }
+                            // move the center point south
+                            else {
+                                adjustedy = adjustedy + (12 * (buildabledistances[2] - buildabledistances[0]));
+                            }
+                            DLL_Draw_Intercept(longaxis - 1, basewallx, adjustedy, 24, 24*longaxis, SHAPE_WIN_REL | SHAPE_CENTER, this, "ZWALLV", HOUSE_NONE, 0x100);
+                        }
+                        // do we need to draw an east/west marker?
+                        if (buildabledistances[1] || buildabledistances[3]){
+                            int adjustedx = basewallx;
+                            int longaxis = buildabledistances[1] + buildabledistances[3]; // 1 short since only extends halfway into endpoint cells
+                            // move the center point east
+                            if (buildabledistances[1] > buildabledistances[3]){
+                                adjustedx = adjustedx + (12 * (buildabledistances[1] - buildabledistances[3]));
+                            }
+                            // move the center point west
+                            else {
+                                adjustedx = adjustedx - (12 * (buildabledistances[3] - buildabledistances[1]));
+                            }
+                            DLL_Draw_Intercept(longaxis - 1, adjustedx, basewally, 24*longaxis, 24, SHAPE_WIN_REL | SHAPE_CENTER, this, "ZWALLH", HOUSE_NONE, 0x100);
+                        }
+                        
                     }
                 }
-                
             }
             
-            // finally, draw the markers
-            for (int i =0; i<MAP_CELL_TOTAL; i++){
-                if (iconlist[i]){
-                    COORDINATE icoord = Cell_Coord(i);
-                    int iconx;
-                    int icony;
-                    Map.Coord_To_Pixel(icoord, iconx, icony);
-                    // remastered render
-                    if (window == WINDOW_VIRTUAL){
-                        DLL_Draw_Intercept(iconlist[i], iconx, icony, 24, 24, SHAPE_WIN_REL | SHAPE_CENTER, this, "PLCEXT", HOUSE_NONE, 0x100);
-                    }
-                    // legacy render
-                    else {
-                        void const *inversepreviewshapefile = MixFileClass::Retrieve("PLCEXT.SHP");
-                        CC_Draw_Shape(inversepreviewshapefile, iconlist[i], iconx, icony, window, SHAPE_WIN_REL | SHAPE_CENTER, NULL, NULL);
-                    }
-                }
-            }
-            
+
         }
         else {
             ShowInverseWallPreviewMarkers = 1; // drop down to 1 so we won't draw the markers, but DisplayClass::Update_Placement_Cursor() knows to mark it to redraw one last time on the next tick

@@ -3293,7 +3293,8 @@ void DLLExportClass::DLL_Draw_Intercept(int shape_number, int x, int y, int widt
             (strcmp(shape_file_name, "DOTSML") == 0) ||
             (strcmp(shape_file_name, "DOTGDI") == 0) ||
             (strcmp(shape_file_name, "DOTNOD") == 0) ||
-            (strcmp(shape_file_name, "PLCEXT") == 0)
+            (strcmp(shape_file_name, "ZWALLH") == 0) ||
+            (strcmp(shape_file_name, "ZWALLV") == 0)
         )
     ){
         // seems like VisibleFlags uses the same type of mask as HouseClass.Allies -- left shift 1 by the house number
@@ -4499,12 +4500,12 @@ void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_
 				*/
 				for (int adjY = y - buildingGap, adjMaxY = y + buildingGap; adjY <= adjMaxY; ++adjY) {
                     // Chthon CFE Note: Let's avoid doing a left shift on a negative number (undefined!) or wrapping the map
-                    if ( (map_cell_y + adjY < 0) || (map_cell_y + adjY > MAP_MAX_CELL_HEIGHT) ){
+                    if ( (map_cell_y + adjY < 0) || (map_cell_y + adjY >= MAP_MAX_CELL_HEIGHT) ){
                         continue;
                     }
 					for (int adjX = x - buildingGap, adjMaxX = x + buildingGap; adjX <= adjMaxX; ++adjX) {
                         // Chthon CFE Note: Let's avoid wrapping the map
-                        if ( (map_cell_x + adjX < 0) || (map_cell_x + adjX > MAP_MAX_CELL_WIDTH) ){
+                        if ( (map_cell_x + adjX < 0) || (map_cell_x + adjX >= MAP_MAX_CELL_WIDTH) ){
                             continue;
                         }
                         //XY_CELL is incompatible with this because x/y do not take the map offset into account
