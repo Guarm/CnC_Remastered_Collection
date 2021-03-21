@@ -452,12 +452,7 @@ void UnitClass::AI(void)
 	**	If this is a vehicle that heals itself (e.g., Mammoth Tank), then it will perform
 	**	the heal logic here.
 	*/
-	if (*this == UNIT_HTANK  && (Frame % 16) == 0 && Health_Ratio() < 0x0080 && VeterancyRank < 2) {
-		Strength++;
-		Mark(MARK_CHANGE);
-        // dealt with in TECHNO.CPP if vetrancy >=2
-	}
-	else if (*this == UNIT_VICE && Map[Coord_Cell(Coord)].Land_Type() == LAND_TIBERIUM && Health_Ratio() < 0x0100 && (Frame % 16) == 0) {
+	if (*this == UNIT_VICE && Map[Coord_Cell(Coord)].Land_Type() == LAND_TIBERIUM && Health_Ratio() < 0x0100 && (Frame % 16) == 0) {
 		Strength++;
         if (ActiveCFEPatchConfig.MeanerVisceroids){
             Strength+=3; //total of 4

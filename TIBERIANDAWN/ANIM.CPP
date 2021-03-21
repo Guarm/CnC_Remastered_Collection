@@ -1174,7 +1174,32 @@ void AnimClass::Middle(void)
 
 					if (!building) building = (BuildingClass *)backup;
 				}
-				Explosion_Damage(Center_Coord(), 600, building, WARHEAD_PB);
+				// Gaurm - Added aoe to ion cannon and increased damage - copied code from nuke
+				int radius = 2;
+				int rawdamage = 2000;
+				for (int x = -radius; x <= radius; x++) {
+					for (int y = -radius; y <= radius; y++) {
+						int xpos = Cell_X(cell) + x;
+						int ypos = Cell_Y(cell) + y;
+
+						/*
+						**	If the potential damage cell is outside of the map bounds,
+						**	then don't process it. This unusual check method ensures that
+						**	damage won't wrap from one side of the map to the other.
+						*/
+						if ((unsigned)xpos > MAP_CELL_W) {
+							continue;
+						}
+						if ((unsigned)ypos > MAP_CELL_H) {
+							continue;
+						}
+						CELL tcell = XY_Cell(xpos, ypos);
+						if (!Map.In_Radar(tcell)) continue;
+
+						int damage = rawdamage / ((ABS(radius) / 2) + 1);
+						Explosion_Damage(Cell_Coord(tcell), damage, building, WARHEAD_PB);
+					}
+				}
 			}
 			break;
 

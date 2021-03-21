@@ -2772,7 +2772,7 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 			if (AirStrike.Is_Ready()) {
 				int strike = 1;
 				if (GameToPlay == GAME_NORMAL) {
-					strike = Bound(BuildLevel/3, 1, 3);
+					strike = Bound(BuildLevel / 3, 2, 5);
 				} else {
 					strike = Bound(MPlayerUnitCount/5, 1, 3);
 				}

@@ -318,8 +318,8 @@ typedef enum SpecialWeaponType : unsigned char {
 **	These defines control the rate of ion cannon and airstrike recharging.
 */
 #define NUKE_GONE_TIME			14*TICKS_PER_MINUTE
-#define ION_CANNON_GONE_TIME	10*TICKS_PER_MINUTE
-#define AIR_CANNON_GONE_TIME	8*TICKS_PER_MINUTE
+#define ION_CANNON_GONE_TIME	2*TICKS_PER_MINUTE
+#define AIR_CANNON_GONE_TIME	1*TICKS_PER_MINUTE
 #define OBELISK_ANIMATION_RATE	15
 
 

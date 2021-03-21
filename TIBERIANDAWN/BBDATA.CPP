@@ -181,22 +181,22 @@ static BulletTypeClass const ClassMissile(
 static BulletTypeClass const ClassMissile2(
 	BULLET_SSM2,
 	"DRAGON",					// NAME:			Text name of this unit type.
-		true,						// Flies over tall walls?
-		true,						// Homes in on target?
-		false,					// Projectile arcs to the target?
-		false,					// Is this a dropping bomb-like object?
-		false,					// Is this projectile invisible?
-		true,						// Will it blow up even if it gets just NEAR to target?
-		true,						// Does it have flickering flame animation?
-		true,						// Can it run out of fuel?
-		false,					// Is there no visual difference between projectile facings?
-		true,						// Is projectile inherently inaccurate?
+	true,						// Flies over tall walls?
+	true,						// Homes in on target?
+	false,					// Projectile arcs to the target?
+	false,					// Is this a dropping bomb-like object?
+	false,					// Is this projectile invisible?
+	true,						// Will it blow up even if it gets just NEAR to target?
+	true,						// Does it have flickering flame animation?
+	true,						// Can it run out of fuel?
+	false,					// Is there no visual difference between projectile facings?
+	false ,						// Is projectile inherently inaccurate?
 		true,						// Translucent colors are used?
 		true,						// Good against aircraft?
 	9,								// ARMING:		Time to arm projectile after launch.
 	0,								// RANGE:		Inherent override range factor.
 	MPH_ROCKET,					// SPEED:		Miles per hour.
-	7,								// ROT:			Rate of turn (degrees per tick).
+	14,								// ROT:			Rate of turn (degrees per tick).
 	WARHEAD_HE,					// WARHEAD:		If fires weapon, warhead type
 	ANIM_FRAG1					// Explosion to use upon impact.
 );

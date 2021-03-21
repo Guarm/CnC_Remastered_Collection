@@ -313,10 +313,10 @@ static UnitTypeClass const UnitMTank(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	400,										// STRENGTH:	Strength (in damage points).
-	3,											// SIGHTRANGE:	Range of sighting.
-	800,										// COST:			Cost to build (Credits).
-	7,											// SCENARIO:	Starting availability scenario.
+	600,										// STRENGTH:	Strength (in damage points).
+	5,											// SIGHTRANGE:	Range of sighting.
+	600,										// COST:			Cost to build (Credits).
+	6,											// SCENARIO:	Starting availability scenario.
 	80,62,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -370,10 +370,10 @@ static UnitTypeClass const UnitHTank(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	600,										// STRENGTH:	Strength (in damage points).
-	4,											// SIGHTRANGE:	Range of sighting.
-	1500,										// COST:			Cost to build (Credits).
-	13,										// SCENARIO:	Starting availability scenario.
+	900,										// STRENGTH:	Strength (in damage points).
+	8,											// SIGHTRANGE:	Range of sighting.
+	1200,										// COST:			Cost to build (Credits).
+	12,										// SCENARIO:	Starting availability scenario.
 	80,80, 									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -663,7 +663,7 @@ static UnitTypeClass const UnitHarvester(
 //	300,										// STRENGTH:	Strength (in damage points).
 	2,											// SIGHTRANGE:	Range of sighting.
 	1400,										// COST:			Cost to build (Credits).
-	7,											// SCENARIO:	Starting availability scenario.
+	5,											// SCENARIO:	Starting availability scenario.
 	80,85,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -721,7 +721,7 @@ static UnitTypeClass const UnitMCV(
 	600,										// STRENGTH:	Strength (in damage points).
 	2,											// SIGHTRANGE:	Range of sighting.
 	5000,										// COST:			Cost to build (Credits).
-	15,										// SCENARIO:	Starting availability scenario.
+	9,										// SCENARIO:	Starting availability scenario.
 	80,86,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -776,10 +776,10 @@ static UnitTypeClass const UnitJeep(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	150,										// STRENGTH:	Strength (in damage points).
-	2,											// SIGHTRANGE:	Range of sighting.
-	400,										// COST:			Cost to build (Credits).
-	5,											// SCENARIO:	Starting availability scenario.
+	300,										// STRENGTH:	Strength (in damage points).
+	8,											// SIGHTRANGE:	Range of sighting.
+	300,										// COST:			Cost to build (Credits).
+	3,											// SCENARIO:	Starting availability scenario.
 	80,41,	 								// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -951,10 +951,10 @@ static UnitTypeClass const UnitMLRS(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	100,										// STRENGTH:	Strength (in damage points).
-	4,											// SIGHTRANGE:	Range of sighting.
+	200,										// STRENGTH:	Strength (in damage points).
+	5,											// SIGHTRANGE:	Range of sighting.
 	800,										// COST:			Cost to build (Credits).
-	11,										// SCENARIO:	Starting availability scenario.
+	10,										// SCENARIO:	Starting availability scenario.
 	80,72, 									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -1009,10 +1009,10 @@ static UnitTypeClass const UnitAPC(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	200,										// STRENGTH:	Strength (in damage points).
-	4,											// SIGHTRANGE:	Range of sighting.
-	700,										// COST:			Cost to build (Credits).
-	5,											// SCENARIO:	Starting availability scenario.
+	500,										// STRENGTH:	Strength (in damage points).
+	6,											// SIGHTRANGE:	Range of sighting.
+	500,										// COST:			Cost to build (Credits).
+	4,											// SCENARIO:	Starting availability scenario.
 	80,15,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -1023,7 +1023,7 @@ static UnitTypeClass const UnitAPC(
 	HOUSEF_BAD|
 	HOUSEF_JP|
 	HOUSEF_GOOD,							// OWNABLE:		Ownable by house (bit field).
-	WEAPON_M60MG,WEAPON_NONE,
+	WEAPON_CHAIN_GUN,WEAPON_NONE,
 	ARMOR_STEEL,							// ARMOR:		Armor type
 	SPEED_TRACK,							// MOVE:			Locomotion type.
 	MPH_MEDIUM_FASTER,					// SPEED:		Miles per hour.
