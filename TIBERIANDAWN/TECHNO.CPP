@@ -1969,34 +1969,10 @@ void TechnoClass::AI(void)
     // 1 hp per 16 frames turned out to be insanely strong from low HP units,
     // so redoing this so it's 1/600th of maxhp per 16 frames
     // That should keep the rate for Mammoth Tanks and harvesters the same as before, while everything else scales accordingly
-    if (VeterancyRank > 1 && Strength){ //check for non-zero Strength so we don't heal things in the middle of death animation
-        int healcycle = 9600 / Class_Of().MaxStrength;  // = (600/Max)*16
-        if (What_Am_I() == RTTI_UNIT && *((UnitClass*)this) == UNIT_HARVESTER && VeterancyRank == 3){
-            healcycle = healcycle / 2;
-        }
-        if (healcycle == 0){
-            healcycle = 1;
-        }
-        if ((Frame % healcycle) == 0){
-            unsigned int healthreshhold = 0x0080;
-            // units that already have healing to 50% without veterancy get healing to 100%
-            // buildings get healing to 100% at rank 3 as compensation for not getting move speed
-            if (    (What_Am_I() == RTTI_UNIT && 
-                        (
-                            *((UnitClass*)this) == UNIT_HTANK ||
-                            ((ActiveCFEPatchConfig.EnableHarvySelfRepair || VeterancyRank == 3) && *((UnitClass*)this) == UNIT_HARVESTER)
-                        )
-                    ) ||
-                    (What_Am_I() == RTTI_BUILDING && VeterancyRank == 3)
-            ){
-                healthreshhold = 0x0100;
-            }
-            if (Health_Ratio() < healthreshhold){
-                Strength++;
-                Mark(MARK_CHANGE);
-            }
-        }
-    }
+	if (House->IsHuman && Strength) { //check for non-zero Strength so we don't heal things in the middle of death animation
+		if ((Frame % 16) == 0 && Health_Ratio() < 0x0100) {
+			Strength = Strength + Class_Of().MaxStrength * 0.01;
+			Mark(MARK_CHANGE);
     
 	/*
 	** Handle decision to re-cloak here. Process the cloaking/decloaking operation.

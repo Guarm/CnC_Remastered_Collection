@@ -401,6 +401,7 @@ FireDataType TurretClass::Fire_Data(int which) const
 			break;
 
 		case UNIT_APC:
+		case UNIT_NAPC:
 		case UNIT_JEEP:
 		case UNIT_BUGGY:
 			coord = Coord_Move(coord, DIR_N, 0x0030);

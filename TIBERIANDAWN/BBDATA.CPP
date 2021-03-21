@@ -505,6 +505,51 @@ static BulletTypeClass const NukeLob(
 
 #endif //PETROGLYPH_EXAMPLE_MOD
 
+static BulletTypeClass const Class20mm(
+	BULLET_20MM,
+	"50cal",						// NAME:			Text name of this unit type.
+	true,						// Flies over tall walls?
+	false,					// Homes in on target?
+	false,					// Projectile arcs to the target?
+	false,					// Is this a dropping bomb-like object?
+	true,						// Is this projectile invisible?
+	false,					// Will it blow up even if it gets just NEAR to target?
+	false,					// Does it have flickering flame animation?
+	false,					// Can it run out of fuel?
+	true,						// Is there no visual difference between projectile facings?
+	false,					// Is projectile inherently inaccurate?
+	false,					// Translucent colors are used?
+	false,					// Good against aircraft?
+	0,								// ARMING:		Time to arm projectile after launch.
+	0,								// RANGE:		Inherent override range factor.
+	MPH_LIGHT_SPEED,			// SPEED:		Miles per hour.
+	0,								// ROT:			Rate of turn (degrees per tick).
+	WARHEAD_HE,					// WARHEAD:		If fires weapon, warhead type
+	ANIM_PIFFPIFF				// Explosion to use upon impact.
+);
+
+static BulletTypeClass const ClassStankMissile(
+	BULLET_STANK,
+	"DRAGON",					// NAME:			Text name of this unit type.
+	true,						// Flies over tall walls?
+	true,						// Homes in on target?
+	false,					// Projectile arcs to the target?
+	false,					// Is this a dropping bomb-like object?
+	false,					// Is this projectile invisible?
+	true,						// Will it blow up even if it gets just NEAR to target?
+	true,						// Does it have flickering flame animation?
+	true,						// Can it run out of fuel?
+	false,					// Is there no visual difference between projectile facings?
+	false,					// Is projectile inherently inaccurate?
+	true,						// Translucent colors are used?
+	true,						// Good against aircraft?
+	3,								// ARMING:		Time to arm projectile after launch.
+	0,								// RANGE:		Inherent override range factor.
+	MPH_ROCKET,					// SPEED:		Miles per hour.
+	7,								// ROT:			Rate of turn (degrees per tick).
+	WARHEAD_AP,					// WARHEAD:		If fires weapon, warhead type
+	ANIM_VEH_HIT2				// Explosion to use upon impact.
+);
 			
 /*
 **	This is the array of pointers to the static data associated with
@@ -533,6 +578,8 @@ BulletTypeClass const * const BulletTypeClass::Pointers[BULLET_COUNT] = {
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	&NukeLob,			// BULLET_NUKE_LOB
 #endif //PETROGLYPH_EXAMPLE_MOD
+	&Class20mm,  // BULLET_20MM
+	&ClassStankMissile,  // BULLET_STANK
 
 };
 

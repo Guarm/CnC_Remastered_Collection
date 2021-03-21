@@ -142,10 +142,10 @@ static UnitTypeClass const UnitFTank(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	300,										// STRENGTH:	Strength (in damage points).
-	4,											// SIGHTRANGE:	Range of sighting.
-	800,										// COST:			Cost to build (Credits).
-	9,											// SCENARIO:	Starting availability scenario.
+	500,										// STRENGTH:	Strength (in damage points).
+	6,											// SIGHTRANGE:	Range of sighting.
+	600,										// COST:			Cost to build (Credits).
+	7,											// SCENARIO:	Starting availability scenario.
 	80,66,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -199,9 +199,9 @@ static UnitTypeClass const UnitSTank(
 		true,				// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	110,										// STRENGTH:	Strength (in damage points).
-	4,											// SIGHTRANGE:	Range of sighting.
-	900,										// COST:			Cost to build (Credits).
+	310,										// STRENGTH:	Strength (in damage points).
+	8,											// SIGHTRANGE:	Range of sighting.
+	800,										// COST:			Cost to build (Credits).
 	12,										// SCENARIO:	Starting availability scenario.
 	80,81,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
@@ -212,7 +212,7 @@ static UnitTypeClass const UnitSTank(
 	HOUSEF_MULTI6|
 	HOUSEF_JP|
 	HOUSEF_BAD,								// OWNABLE:		Ownable by house (bit field).
-	WEAPON_DRAGON,WEAPON_NONE,
+	WEAPON_STANK,WEAPON_NONE,
 	ARMOR_ALUMINUM,						// ARMOR:		Armor type
 	SPEED_TRACK,							// MOVE:			Locomotion type.
 	MPH_MEDIUM_FAST,						// SPEED:		Miles per hour.
@@ -256,10 +256,10 @@ static UnitTypeClass const UnitLTank(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	300,										// STRENGTH:	Strength (in damage points).
-	3,											// SIGHTRANGE:	Range of sighting.
-	600,										// COST:			Cost to build (Credits).
-	5,											// SCENARIO:	Starting availability scenario.
+	600,										// STRENGTH:	Strength (in damage points).
+	5,											// SIGHTRANGE:	Range of sighting.
+	400,										// COST:			Cost to build (Credits).
+	4,											// SCENARIO:	Starting availability scenario.
 	80,56,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -602,10 +602,10 @@ static UnitTypeClass const UnitArty(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	75,										// STRENGTH:	Strength (in damage points).
-	4,											// SIGHTRANGE:	Range of sighting.
-	450,										// COST:			Cost to build (Credits).
-	9,											// SCENARIO:	Starting availability scenario.
+	275,										// STRENGTH:	Strength (in damage points).
+	6,											// SIGHTRANGE:	Range of sighting.
+	350,										// COST:			Cost to build (Credits).
+	7,											// SCENARIO:	Starting availability scenario.
 	80,73,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -721,7 +721,7 @@ static UnitTypeClass const UnitMCV(
 	600,										// STRENGTH:	Strength (in damage points).
 	2,											// SIGHTRANGE:	Range of sighting.
 	5000,										// COST:			Cost to build (Credits).
-	15,										// SCENARIO:	Starting availability scenario.
+	1,										// SCENARIO:	Starting availability scenario.
 	80,86,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -833,10 +833,10 @@ static UnitTypeClass const UnitBuggy(
 		false,			// Is the unit capable of cloaking?
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
-	140,										// STRENGTH:	Strength (in damage points).
-	2,											// SIGHTRANGE:	Range of sighting.
-	300,										// COST:			Cost to build (Credits).
-	5,											// SCENARIO:	Starting availability scenario.
+	340,										// STRENGTH:	Strength (in damage points).
+	9,											// SIGHTRANGE:	Range of sighting.
+	150,										// COST:			Cost to build (Credits).
+	3,											// SCENARIO:	Starting availability scenario.
 	80,42, 									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -891,13 +891,13 @@ static UnitTypeClass const UnitBike(
 		false,			// Does the unit have a constant animation?
 	-1,										// AMMO:			Number of shots it has (default).
 #ifdef ADVANCED
-	90,										// STRENGTH:	Strength (in damage points).
+	290,										// STRENGTH:	Strength (in damage points).
 #else
-	160,										// STRENGTH:	Strength (in damage points).
+	260,										// STRENGTH:	Strength (in damage points).
 #endif
-	2,											// SIGHTRANGE:	Range of sighting.
-	500,										// COST:			Cost to build (Credits).
-	5,											// SCENARIO:	Starting availability scenario.
+	9,											// SIGHTRANGE:	Range of sighting.
+	200,										// COST:			Cost to build (Credits).
+	4,											// SCENARIO:	Starting availability scenario.
 	80,45, 									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -1352,6 +1352,63 @@ static UnitTypeClass const UnitNukeTank(
 
 #endif PETROGLYPH_EXAMPLE_MOD
 
+// Nod Armored personnel carrier
+static UnitTypeClass const UnitNodAPC(
+	UNIT_NAPC,
+	TXT_APC,									// NAME:			Text name of this unit type.
+	"NAPC",									// NAME:			Text name of this unit type.
+	ANIM_FRAG2,							// EXPLOSION:	Type of explosion when destroyed.
+	4,								// Build level.
+	STRUCTF_NONE,			// Building prerequisite.
+	true,				// Can this be a goodie surprise from a crate?
+	true,				// Is a leader type?
+	false,			// Only has eight facings?
+	false,			// Always use the given name for the vehicle?
+	true,				//	Is this a typical transport vehicle?
+	false,			// Can it be crushed by a heavy vehicle?
+	true,				// Can this unit squash infantry?
+	false,			// Does this unit harvest Tiberium?
+	false,			// Is invisible to radar?
+	true,				// Is selectable by player?
+	true,				// Can it be a target for attack or move?
+	false,			// Is it insignificant (won't be announced)?
+	false,			// Is it immune to normal combat damage?
+	false,			// Is it equipped with a combat turret?
+	false,			// Fires multiple shots in quick succession?
+	true,				// Can it be repaired in a repair facility?
+	true,				// Can the player construct or order this unit?
+	false,			// Is there a crew inside?
+	false,			// Does it have a rotating radar dish?
+	false,			// Is there an associated firing animation?
+	false,			// Must the turret be in a locked down position while moving?
+	true,				// Does it lay tracks while moving?
+	false,			// Is this a gigundo-rotund-enormous unit?
+	false,			// Is the unit's art as "chunky" cardinal facing only?
+	false,			// Is the unit capable of cloaking?
+	false,			// Does the unit have a constant animation?
+	-1,										// AMMO:			Number of shots it has (default).
+	600,										// STRENGTH:	Strength (in damage points).
+	8,											// SIGHTRANGE:	Range of sighting.
+	500,										// COST:			Cost to build (Credits).
+	4,											// SCENARIO:	Starting availability scenario.
+	80, 15,									// RISK/RWRD:	Risk/reward rating values.
+	HOUSEF_MULTI1 |
+	HOUSEF_MULTI2 |
+	HOUSEF_MULTI3 |
+	HOUSEF_MULTI4 |
+	HOUSEF_MULTI5 |
+	HOUSEF_MULTI6 |
+	HOUSEF_BAD |
+	HOUSEF_JP,							// OWNABLE:		Ownable by house (bit field).
+	WEAPON_20MM, WEAPON_NONE,
+	ARMOR_STEEL,							// ARMOR:		Armor type
+	SPEED_TRACK,							// MOVE:			Locomotion type.
+	MPH_MEDIUM_FASTER,					// SPEED:		Miles per hour.
+	5,											// ROT:			Rate of turn (degrees per tick).
+	0,											// Turret center offset along body centerline.
+	MISSION_HUNT							// ORDERS:		Default order to give new unit.
+);
+
 /*
 **	This is the array of pointers to the static data associated with each
 **	vehicle type.
@@ -1382,6 +1439,7 @@ UnitTypeClass const * const UnitTypeClass::Pointers[UNIT_COUNT] = {
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	&UnitNukeTank,		// UNIT_NUKE_TANK
 #endif //PETROGLYPH_EXAMPLE_MOD
+	&UnitNodAPC,          // Nod APC
 			
 };
 
@@ -1683,6 +1741,9 @@ void UnitTypeClass::One_Time(void)
 			ptr = MixFileClass::Retrieve(fullname);
 		}
 #endif //PETROGLYPH_EXAMPLE_MOD
+		if (index == UNIT_NAPC && ptr == NULL) {
+			_makepath(fullname, NULL, NULL, "APC", ".SHP");
+			ptr = MixFileClass::Retrieve(fullname);
 
 		((void const *&)uclass.ImageData) = ptr;
 		if (ptr) {

@@ -678,18 +678,20 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 	**	Ensure that the ion cannon cannot be built if
 	**	Nod has captured the GDI construction yard.
 	*/
+	/*
 	if (type->What_Am_I() == RTTI_BUILDINGTYPE &&
 		(((BuildingTypeClass const *)type)->Type == STRUCT_EYE) &&
 		Class->House == HOUSE_BAD) {
 
 		return(false);
 	}
+	*/
 
 	/*
 	**	Nod can build the advanced power plant at scenario #12.
 	*/
 	if (house == HOUSE_BAD &&
-		level >= 12 &&
+		level >= 6 &&
 		type->What_Am_I() == RTTI_BUILDINGTYPE &&
 		((BuildingTypeClass const *)type)->Type == STRUCT_ADVANCED_POWER) {
 
@@ -699,12 +701,14 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 	/*
 	**	Nod cannot build a helipad in the normal game.
 	*/
+	/*
 	if (house == HOUSE_BAD &&
 		type->What_Am_I() == RTTI_BUILDINGTYPE &&
 		((BuildingTypeClass const *)type)->Type == STRUCT_HELIPAD) {
 
 		return(false);
 	}
+	*/
 
 	/*
 	**	GDI can build the sandbag wall only from scenario #9 onwards.
@@ -1362,7 +1366,7 @@ void HouseClass::AI(void)
 		**	available, then make the nuke strike strike available.
 		*/
 		if ((GameToPlay == GAME_NORMAL || Rule.AllowSuperWeapons) && (ActiveBScan & STRUCTF_TEMPLE) && Has_Nuke_Device() && IsHuman) {
-			NukeStrike.Enable((GameToPlay == GAME_NORMAL), this == PlayerPtr);
+			NukeStrike.Enable(false, this == PlayerPtr);
 
 			/*
 			**	Flag the sidebar to be redrawn if necessary.

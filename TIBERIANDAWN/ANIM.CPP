@@ -1062,8 +1062,8 @@ void AnimClass::Middle(void)
 		int radius = 3;
 		int rawdamage = 200;
 		if (GameToPlay == GAME_NORMAL) {
-			radius = 4;
-			rawdamage = 1000;
+			radius = 6;
+			rawdamage = 4000;
 			Fade_Palette_To(WhitePalette, 30, NULL);
 		}
 		for (int x = -radius; x <= radius; x++) {

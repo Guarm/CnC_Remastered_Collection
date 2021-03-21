@@ -351,10 +351,10 @@ static InfantryTypeClass const E4(
 	&FlamethrowerDos[0][0],	// ptr to DO table (above)
 	2,								// Frame of projectile launch.
 	0,								// Frame of projectile launch while prone.
-	70,							// Strength of infantry (in damage points).
-	1,								// Sight range.
-	200,							// Cost of infantry (in credits).
-	5,								// Scenario when they first appear.
+	370,							// Strength of infantry (in damage points).
+	5,								// Sight range.
+	100,							// Cost of infantry (in credits).
+	4,								// Scenario when they first appear.
 	80,10,						// Risk/Reward of this infantry unit.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -578,10 +578,10 @@ static InfantryTypeClass const Commando(
 	&CommandoDos[0][0],		// ptr to DO table
 	2,								// Frame of projectile launch.
 	2,								// Frame of projectile launch while prone.
-	80,							// Strength of infantry (in damage points).
+	380,							// Strength of infantry (in damage points).
 	5,								// Sight range.
 	1000,							// Cost of infantry (in credits).
-	98,							// Scenario when they first appear.
+	9,							// Scenario when they first appear.
 	80,75,						// Risk/Reward of this infantry unit.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|

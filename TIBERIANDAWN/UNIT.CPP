@@ -732,7 +732,7 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 				}
 			}
 
-			if (Class->IsTransporter && *this == UNIT_APC && How_Many() < Class->Max_Passengers()) {
+			if (Class->IsTransporter && (*this == UNIT_APC || * this == UNIT_NAPC) && How_Many() < Class->Max_Passengers()) {
 				TarComClass::Receive_Message(from, message, param);
 
 				/*
@@ -2984,6 +2984,97 @@ int UnitClass::Mission_Unload(void)
 						Assign_Mission(MISSION_GUARD);
 					}
 					break;
+			}
+			break;
+
+		case UNIT_NAPC:
+			switch (Status) {
+			case INITIAL_CHECK:
+				dir = Desired_Load_Dir(NULL, cell);
+				if (How_Many() && cell != 0) {
+					Do_Turn(dir);
+					Status = MANEUVERING;
+					return(1);
+				}
+				else {
+					Assign_Mission(MISSION_GUARD);
+				}
+				break;
+
+			case MANEUVERING:
+				if (!IsRotating) {
+					APC_Open_Door();
+					if (Is_Door_Opening()) {
+						Status = OPENING_DOOR;
+						return(1);
+					}
+				}
+				break;
+
+			case OPENING_DOOR:
+				if (Is_Door_Open()) {
+					Status = UNLOADING;
+					return(1);
+				}
+				else {
+					if (!Is_Door_Opening()) {
+						Status = INITIAL_CHECK;
+					}
+				}
+				break;
+
+			case UNLOADING:
+				if (How_Many()) {
+					FootClass* passenger = Detach_Object();
+
+					if (passenger) {
+						DirType toface = DIR_S + PrimaryFacing;
+						bool placed = false;
+
+						for (FacingType face = FACING_N; face < FACING_COUNT; face++) {
+							DirType newface = toface + face;
+							CELL newcell = Adjacent_Cell(Coord_Cell(Coord), newface);
+
+							if (passenger->Can_Enter_Cell(newcell) == MOVE_OK) {
+								ScenarioInit++;
+								passenger->Unlimbo(Coord_Move(Coord, newface, 0x0080), newface);
+								ScenarioInit--;
+								passenger->Assign_Mission(MISSION_MOVE);
+								passenger->Assign_Destination(::As_Target(newcell));
+								placed = true;
+								break;
+							}
+						}
+
+						/*
+						** If the attached unit could NOT be deployed, then re-attach
+						**	it and then bail out of this deploy process.
+						*/
+						if (!placed) {
+							Attach(passenger);
+							Status = CLOSING_DOOR;
+						}
+						else {
+							passenger->Look(false);
+						}
+					}
+				}
+				else {
+					Status = CLOSING_DOOR;
+				}
+				break;
+
+				/*
+				**	Close APC door in preparation for normal operation.
+				*/
+			case CLOSING_DOOR:
+				if (Is_Door_Open()) {
+					APC_Close_Door();
+				}
+				if (Is_Door_Closed()) {
+					Assign_Mission(MISSION_GUARD);
+				}
+				break;
 			}
 			break;
 

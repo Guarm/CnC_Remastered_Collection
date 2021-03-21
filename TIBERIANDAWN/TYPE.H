@@ -859,7 +859,7 @@ class UnitTypeClass : public TechnoTypeClass
 {
 	public:
 		enum UnitTypeClassRepairEnums {
-			TIBERIUM_STEP=25,					// Credits per step of Tiberium.
+			TIBERIUM_STEP=75,					// Credits per step of Tiberium.
 			STEP_COUNT=28,						// Number of steps a harvester can carry.
 			FULL_LOAD_CREDITS=(TIBERIUM_STEP*STEP_COUNT),
 			REPAIR_PERCENT=102,		// 40% fixed point number.

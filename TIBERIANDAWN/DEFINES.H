@@ -317,7 +317,7 @@ typedef enum SpecialWeaponType : unsigned char {
 /**********************************************************************
 **	These defines control the rate of ion cannon and airstrike recharging.
 */
-#define NUKE_GONE_TIME			14*TICKS_PER_MINUTE
+#define NUKE_GONE_TIME			3*TICKS_PER_MINUTE
 #define ION_CANNON_GONE_TIME	10*TICKS_PER_MINUTE
 #define AIR_CANNON_GONE_TIME	8*TICKS_PER_MINUTE
 #define OBELISK_ANIMATION_RATE	15
@@ -799,6 +799,8 @@ typedef enum BulletType : char {
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	BULLET_NUKE_LOB,		// Nuke projectile
 #endif //PETROGLYPH_EXAMPLE_MOD
+	BULLET_20MM,      // New weapon for Nod APC and Apache
+	BULLET_STANK,     // New weapon for stealth tank
 
 	BULLET_COUNT,
 	BULLET_FIRST=0
@@ -1034,7 +1036,8 @@ typedef enum UnitType : char{
 
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	UNIT_NUKE_TANK,			// Mammoth with a nuke
-#endif			
+#endif		
+	UNIT_NAPC,               // Nod APC
 
 	UNIT_COUNT,
 	UNIT_FIRST=0
@@ -1838,6 +1841,8 @@ typedef enum WeaponType : char {
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	WEAPON_NUKE_LOB,
 #endif PETROGLYPH_EXAMPLE_MOD
+	WEAPON_20MM,
+	WEAPON_STANK,
 			
 	WEAPON_COUNT
 } WeaponType;

@@ -126,7 +126,7 @@ static AircraftTypeClass const TransportHeli(
 	90,						// The strength of this unit.
 	0,							// The range that it reveals terrain around itself.
 	1500,						// Credit cost to construct.
-	98,						// The scenario this becomes available.
+	8,						// The scenario this becomes available.
 	10,80,					// Risk, reward when calculating AI.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -169,10 +169,10 @@ static AircraftTypeClass const AttackHeli(
 		true,					// Can the player construct or order this unit?
 		true,					// Is there a crew inside?
 	15,						// Number of shots it has (default).
-	125,						// The strength of this unit.
-	0,							// The range that it reveals terrain around itself.
+	325,						// The strength of this unit.
+	9,							// The range that it reveals terrain around itself.
 	1200,						// Credit cost to construct.
-	10,						// The scenario this becomes available.
+	8,						// The scenario this becomes available.
 	10,80,					// Risk, reward when calculating AI.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -182,7 +182,7 @@ static AircraftTypeClass const AttackHeli(
 	HOUSEF_MULTI6|
 	HOUSEF_JP|
 	HOUSEF_BAD,				// Who can own this aircraft type.
-	WEAPON_CHAIN_GUN,WEAPON_NONE,
+	WEAPON_20MM,WEAPON_NONE,
 	ARMOR_STEEL,			// Armor type of this aircraft.
 	MPH_FAST,				// Maximum speed of aircraft.
 	4,							// Rate of turn.
