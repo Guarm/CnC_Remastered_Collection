@@ -1973,6 +1973,8 @@ void TechnoClass::AI(void)
 		if ((Frame % 16) == 0 && Health_Ratio() < 0x0100) {
 			Strength = Strength + Class_Of().MaxStrength * 0.01;
 			Mark(MARK_CHANGE);
+		}
+	}
     
 	/*
 	** Handle decision to re-cloak here. Process the cloaking/decloaking operation.

@@ -1744,6 +1744,7 @@ void UnitTypeClass::One_Time(void)
 		if (index == UNIT_NAPC && ptr == NULL) {
 			_makepath(fullname, NULL, NULL, "APC", ".SHP");
 			ptr = MixFileClass::Retrieve(fullname);
+		}
 
 		((void const *&)uclass.ImageData) = ptr;
 		if (ptr) {
