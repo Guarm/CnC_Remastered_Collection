@@ -1969,7 +1969,7 @@ void TechnoClass::AI(void)
     // 1 hp per 16 frames turned out to be insanely strong from low HP units,
     // so redoing this so it's 1/600th of maxhp per 16 frames
     // That should keep the rate for Mammoth Tanks and harvesters the same as before, while everything else scales accordingly
-    if (House->IsHuman && Strength){ //check for non-zero Strength so we don't heal things in the middle of death animation
+    if (Is_Owned_By_Player() && Strength){ //check for non-zero Strength so we don't heal things in the middle of death animation
         if ((Frame % 16) == 0 && Health_Ratio() < 0x0100){
 			Strength = Strength + Class_Of().MaxStrength * 0.01;
             Mark(MARK_CHANGE);

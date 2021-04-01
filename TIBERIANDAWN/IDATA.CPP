@@ -578,10 +578,10 @@ static InfantryTypeClass const Commando(
 	&CommandoDos[0][0],		// ptr to DO table
 	2,								// Frame of projectile launch.
 	2,								// Frame of projectile launch while prone.
-	80,							// Strength of infantry (in damage points).
-	5,								// Sight range.
+	200,							// Strength of infantry (in damage points).
+	8,								// Sight range.
 	1000,							// Cost of infantry (in credits).
-	98,							// Scenario when they first appear.
+	5,							// Scenario when they first appear.
 	80,75,						// Risk/Reward of this infantry unit.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
