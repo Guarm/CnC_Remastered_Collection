@@ -2032,7 +2032,7 @@ static AnimTypeClass const GUNNE(
 static AnimTypeClass const IonCannon(
 	ANIM_ION_CANNON,						// Animation number.
 	"IONSFX",								// Data name of animation.
-	48,										// Maximum dimension of animation.
+	96,										// Maximum dimension of animation.
 	11,										// Biggest animation stage.
 	false,									// Normalized animation rate?
 	false,									// Uses white translucent table?
@@ -2052,7 +2052,7 @@ static AnimTypeClass const IonCannon(
 	VOC_ION_CANNON,						// Sound effect to play.
 	ANIM_ART_EXP1,
 	32,										// Virtual stages
-	0x200									// Virtual scale
+	0x400									// Virtual scale
 );
 
 static AnimTypeClass const AtomBomb(

@@ -484,12 +484,13 @@ void UnitClass::AI(void)
 	**	the heal logic here.
 	*/
     bool itsmybirthday = ((FrameMB() % 16) == 0);
-	if (*this == UNIT_HTANK  && itsmybirthday && Health_Ratio() < 0x0080 && VeterancyRank < 2) {
-		Strength++;
-		Mark(MARK_CHANGE);
+//	if (*this == UNIT_HTANK  && itsmybirthday && Health_Ratio() < 0x0080 && VeterancyRank < 2) {
+//		Strength++;
+//		Mark(MARK_CHANGE);
         // dealt with in TECHNO.CPP if vetrancy >=2
-	}
-	else if (*this == UNIT_VICE && Map[Coord_Cell(Coord)].Land_Type() == LAND_TIBERIUM && Health_Ratio() < 0x0100 && itsmybirthday) {
+//	}
+//	else if (*this == UNIT_VICE && Map[Coord_Cell(Coord)].Land_Type() == LAND_TIBERIUM && Health_Ratio() < 0x0100 && itsmybirthday) {
+	if (*this == UNIT_VICE && Map[Coord_Cell(Coord)].Land_Type() == LAND_TIBERIUM && Health_Ratio() < 0x0100 && itsmybirthday) {
 		Strength++;
         if (ActiveCFEPatchConfig.MeanerVisceroids){
             Strength+=ActiveCFEPatchConfig.MeanerVisceroids; // up to total of 4

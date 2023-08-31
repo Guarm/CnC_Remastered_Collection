@@ -612,6 +612,11 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 	int level = Scenario;
 #endif
 
+	/* Guarm edit - unlock everything in GDI campaign*/
+	if (house == HOUSE_GOOD && level <= 15) {
+		level = 15;
+	}
+
 	/*
 	**	Special check to make the mission objective buildings the prerequisite
 	**	for the stealth tank in mission #11 only.
@@ -2875,7 +2880,7 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 			if (AirStrike.Is_Ready()) {
 				int strike = 1;
 				if (GameToPlay == GAME_NORMAL) {
-					strike = Bound(BuildLevel/3, 1, 3);
+					strike = Bound(BuildLevel/2, 2, 4);
 				} else {
 					strike = Bound(MPlayerUnitCount/5, 1, 3);
 				}

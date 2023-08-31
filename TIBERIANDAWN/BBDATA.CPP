@@ -190,13 +190,13 @@ static BulletTypeClass const ClassMissile2(
 		true,						// Does it have flickering flame animation?
 		true,						// Can it run out of fuel?
 		false,					// Is there no visual difference between projectile facings?
-		true,						// Is projectile inherently inaccurate?
+		false,						// Is projectile inherently inaccurate?
 		true,						// Translucent colors are used?
 		true,						// Good against aircraft?
 	9,								// ARMING:		Time to arm projectile after launch.
 	0,								// RANGE:		Inherent override range factor.
 	MPH_ROCKET,					// SPEED:		Miles per hour.
-	7,								// ROT:			Rate of turn (degrees per tick).
+	14,								// ROT:			Rate of turn (degrees per tick).
 	WARHEAD_HE,					// WARHEAD:		If fires weapon, warhead type
 	ANIM_FRAG1					// Explosion to use upon impact.
 );

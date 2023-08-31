@@ -313,10 +313,10 @@ static BuildingTypeClass const ClassWeapon(
 #ifdef ADVANCED
 	500,										// STRNTH:		Full strength of building.
 #else
-	200,										// STRNTH:		Full strength of building.
+	400,										// STRNTH:		Full strength of building.
 #endif
 	3,											// SIGHTRANGE:	Range of sighting.
-	2000,										// COST:			Cost to purchase.
+	1000,										// COST:			Cost to purchase.
 	5,											// SCENARIO:	Starting availability scenario.
 	0,86,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
@@ -371,10 +371,10 @@ static BuildingTypeClass const ClassGTower(
 		false,		// Does building care less if placed on concrete?
 	RTTI_NONE,								// The object type produced at this factory.
 	DIR_N,									// Starting idle frame to match construction.
-	200,										// STRNTH:		Full strength of building.
-	3,											// SIGHTRANGE:	Range of sighting.
-	500,										// COST:			Cost to purchase.
-	7,											// SCENARIO:	Starting availability scenario.
+	400,										// STRNTH:		Full strength of building.
+	6,											// SIGHTRANGE:	Range of sighting.
+	300,										// COST:			Cost to purchase.
+	4,											// SCENARIO:	Starting availability scenario.
 	100,25,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -429,10 +429,10 @@ static BuildingTypeClass const ClassATower(
 		false,		// Does building care less if placed on concrete?
 	RTTI_NONE,								// The object type produced at this factory.
 	DIR_N,									// Starting idle frame to match construction.
-	300,										// STRNTH:		Full strength of building.
-	4,											// SIGHTRANGE:	Range of sighting.
-	1000,										// COST:			Cost to purchase.
-	13,										// SCENARIO:	Starting availability scenario.
+	600,										// STRNTH:		Full strength of building.
+	8,											// SIGHTRANGE:	Range of sighting.
+	700,										// COST:			Cost to purchase.
+	9,										// SCENARIO:	Starting availability scenario.
 	100,30,									// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -669,7 +669,7 @@ static BuildingTypeClass const ClassRefinery(
 	DIR_N,									// Starting idle frame to match construction.
 	450,										// STRNTH:		Full strength of building.
 	4,											// SIGHTRANGE:	Range of sighting.
-	2000,										// COST:			Cost to purchase.
+	1000,										// COST:			Cost to purchase.
 	2,											// SCENARIO:	Starting availability scenario.
 	0,55,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
@@ -686,7 +686,7 @@ static BuildingTypeClass const ClassRefinery(
 	WEAPON_NONE,WEAPON_NONE,
 	ARMOR_WOOD,								// ARMOR:		Armor type
 	0,											// CANENTER:	Units that can enter building.
-	1000,										// CAPACITY:	Spice storage capacity.
+	3000,										// CAPACITY:	Spice storage capacity.
 	10,										// POWER:		Power points required.
 	40,										// DRAIN:		Power points required.
 	BSIZE_33, 								// SIZE:			Building size.
@@ -745,7 +745,7 @@ static BuildingTypeClass const ClassStorage(
 	WEAPON_NONE,WEAPON_NONE,
 	ARMOR_WOOD,								// ARMOR:		Armor type
 	0,											// CANENTER:	Units that can enter building.
-	1500,										// CAPACITY:	Spice storage capacity.
+	3000,										// CAPACITY:	Spice storage capacity.
 	0,											// POWER:		Power points required.
 	10,										// DRAIN:		Power points required.
 	BSIZE_21, 								// SIZE:			Building size.
@@ -1074,7 +1074,7 @@ static BuildingTypeClass const ClassAdvancedPower(
 	DIR_N,									// Starting idle frame to match construction.
 	300,										// STRNTH:		Full strength of building.
 	2,											// SIGHTRANGE:	Range of sighting.
-	700,										// COST:			Cost to purchase.
+	500,										// COST:			Cost to purchase.
 	13,										// SCENARIO:	Starting availability scenario.
 	0,75,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
@@ -1265,8 +1265,8 @@ static BuildingTypeClass const ClassBarracks(
 	ARMOR_WOOD,								// ARMOR:		Armor type
 	0,											// CANENTER:	Units that can enter building.
 	0,											// CAPACITY:	Spice storage capacity.
-	0,											// POWER:		Power points required.
-	20,										// DRAIN:		Power points required.
+	200,											// POWER:		Power points required.
+	0,										// DRAIN:		Power points required.
 	BSIZE_22, 								// SIZE:			Building size.
 	(short const *)ExitPyle,			// Preferred exit cell list.
 	(short const *)List22_1100,		// OCCUPYLIST:	List of active foundation squares.
@@ -1417,10 +1417,10 @@ static BuildingTypeClass const ClassRepair(
 		false,		// Does building care less if placed on concrete?
 	RTTI_NONE,								// The object type produced at this factory.
 	DIR_N,									// Starting idle frame to match construction.
-	400,										// STRNTH:		Full strength of building.
+	600,										// STRNTH:		Full strength of building.
 	3,											// SIGHTRANGE:	Range of sighting.
-	1200,										// COST:			Cost to purchase.
-	8,											// SCENARIO:	Starting availability scenario.
+	600,										// COST:			Cost to purchase.
+	5,											// SCENARIO:	Starting availability scenario.
 	0,46,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -3724,8 +3724,8 @@ static BuildingTypeClass const Sandbag(
 	DIR_N,									// Starting idle frame to match construction.
 	1,											// STRNTH:		Full strength of building.
 	0,											// SIGHTRANGE:	Range of sighting.
-	50,										// COST:			Cost to purchase.
-	5,											// SCENARIO:	Starting availability scenario.
+	5,										// COST:			Cost to purchase.
+	3,											// SCENARIO:	Starting availability scenario.
 	0,0,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -3782,8 +3782,8 @@ static BuildingTypeClass const Cyclone(
 	DIR_N,									// Starting idle frame to match construction.
 	1,											// STRNTH:		Full strength of building.
 	0,											// SIGHTRANGE:	Range of sighting.
-	75,										// COST:			Cost to purchase.
-	9,											// SCENARIO:	Starting availability scenario.
+	10,										// COST:			Cost to purchase.
+	5,											// SCENARIO:	Starting availability scenario.
 	0,0,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
@@ -3840,8 +3840,8 @@ static BuildingTypeClass const Brick(
 	DIR_N,									// Starting idle frame to match construction.
 	1,											// STRNTH:		Full strength of building.
 	0,											// SIGHTRANGE:	Range of sighting.
-	100,										// COST:			Cost to purchase.
-	13,										// SCENARIO:	Starting availability scenario.
+	15,										// COST:			Cost to purchase.
+	8,										// SCENARIO:	Starting availability scenario.
 	0,0,										// RISK/RWRD:	Risk/reward rating values.
 	HOUSEF_MULTI1|
 	HOUSEF_MULTI2|
