@@ -613,8 +613,8 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 #endif
 
 	/* Guarm edit - unlock everything in GDI campaign*/
-	if (house == HOUSE_GOOD && level <= 15) {
-		level = 15;
+	if (house == HOUSE_GOOD && level < 98) {
+		level = 20;
 	}
 
 	/*
@@ -739,9 +739,9 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 	**	GDI has a special second training mission. Adjust the scenario level so that
 	**	scenario two will still feel like scenario #1.
 	*/
-	if (house == HOUSE_GOOD && Scenario == 2) {  // J_D: Scenario instead of level so that GDI build level 2 is available to mission-makers
-		level = 1;
-	}
+	//if (house == HOUSE_GOOD && Scenario == 2) {  // J_D: Scenario instead of level so that GDI build level 2 is available to mission-makers
+	//	level = 1;
+	//}
 
 	// ST - 8/23/2019 4:53PM
 	if (DebugUnlockBuildables) {

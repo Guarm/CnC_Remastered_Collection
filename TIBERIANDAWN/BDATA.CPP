@@ -179,7 +179,7 @@ static BuildingTypeClass const ClassTemple(
 		false,		// Always use the given name for the building?
 		false,		// Is this a wall type structure?
 		false,		// Is it a factory type building?
-		false,		// Can this building be captured?
+		true,		// Can this building be captured?
 		false,		// Does it catch fire?
 		true,			// Simple (one frame) damage imagery?
 		false,		// Is it invisible to radar?
@@ -236,7 +236,7 @@ static BuildingTypeClass const ClassEye(
 		false,		// Always use the given name for the building?
 		false,		// Is this a wall type structure?
 		false,		// Is it a factory type building?
-		false,			// Can this building be captured?
+		true,			// Can this building be captured?
 		false,		// Does it catch fire?
 		false,		// Simple (one frame) damage imagery?
 		false,		// Is it invisible to radar?
